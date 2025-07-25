@@ -7980,6 +7980,7 @@ char portable_getch() {
 
 ---
 
+### **ncurses** <a id="ncurses"></a>
 #### **`<ncurses.h>`** - Terminal User Interface Library
 
 **💡 What is ncurses?**
@@ -8069,6 +8070,27 @@ MUDs - Multi-user dungeons
 - Multiple windows and panels
 
 **When to use:** Terminal-based applications, text editors, system monitors, games, file managers, any program needing a sophisticated terminal UI
+
+**Platform availability:** 
+- **Linux/Mac:** Built-in or easily installable
+- **Windows:** Requires additional setup (use PDCurses or Windows Subsystem for Linux)
+
+**Installation:**
+```bash
+# Linux (Ubuntu/Debian)
+sudo apt-get install libncurses5-dev libncursesw5-dev
+
+# Linux (Red Hat/CentOS/Fedora)
+sudo yum install ncurses-devel
+# or
+sudo dnf install ncurses-devel
+
+# Mac (with Homebrew)
+brew install ncurses
+
+# Compile your program
+g++ -o myprogram myprogram.cpp -lncurses
+```
 
 **What you get:**
 - `initscr()` - Initialize ncurses mode
@@ -10552,148 +10574,6 @@ g++ program.cpp -lpthread -lm -lrt -o program
 | Format output nicely | `<iomanip>` | `setprecision(2);` |
 | Generate random numbers | `<random>` | Random dice rolls, games |
 | Work with time/dates | `<chrono>` | Measuring performance |
-
----
-
-### **ncurses** <a id="ncurses"></a>
-**What it does:** Advanced terminal/console manipulation library for creating text-based user interfaces, games, and applications with cursor control, colors, and special effects.
-
-**When to use:** Building text-based games (like Snake, Tetris), terminal applications with menus, progress bars, or any program that needs precise screen control.
-
-**Platform availability:** 
-- **Linux/Mac:** Built-in or easily installable
-- **Windows:** Requires additional setup (use PDCurses or Windows Subsystem for Linux)
-
-**What you get:**
-- `initscr()` - Initialize screen for ncurses use
-- `endwin()` - Clean up and return to normal terminal
-- `addch()` - Add single character at cursor position
-- `printw()` - Print formatted text (like printf)
-- `mvprintw()` - Move cursor and print text
-- `getch()` - Get single keypress without Enter
-- `refresh()` - Update screen with changes
-- `clear()` - Clear entire screen
-- `move()` - Move cursor to specific position
-
-**Installation:**
-```bash
-# Linux (Ubuntu/Debian)
-sudo apt-get install libncurses5-dev libncursesw5-dev
-
-# Linux (Red Hat/CentOS)
-sudo yum install ncurses-devel
-
-# Mac (with Homebrew)
-brew install ncurses
-
-# Compile your program
-g++ -o myprogram myprogram.cpp -lncurses
-```
-
-**Example - Simple ncurses program:**
-```cpp
-#include <ncurses.h>
-
-int main() {
-    // Initialize ncurses
-    initscr();
-    
-    // Print welcome message
-    printw("Welcome to ncurses!\n");
-    printw("Press any key to continue...\n");
-    refresh();  // Show changes on screen
-    
-    // Wait for keypress
-    getch();
-    
-    // Move cursor and print at specific position
-    move(10, 20);  // Row 10, Column 20
-    addch('*');
-    
-    // Print formatted text at cursor position
-    mvprintw(12, 15, "Score: %d", 100);
-    
-    refresh();
-    getch();
-    
-    // Clean up and exit
-    endwin();
-    return 0;
-}
-```
-
-**Example - Simple Snake Game Framework:**
-```cpp
-#include <ncurses.h>
-#include <vector>
-#include <cstdlib>
-#include <ctime>
-
-struct Point {
-    int x, y;
-};
-
-int main() {
-    // Initialize
-    initscr();
-    cbreak();        // Disable line buffering
-    noecho();        // Don't echo keys to screen
-    keypad(stdscr, TRUE);  // Enable arrow keys
-    curs_set(0);     // Hide cursor
-    
-    srand(time(0));  // Seed random number generator
-    
-    // Game variables
-    Point snake = {10, 10};
-    Point food = {rand() % 20 + 1, rand() % 20 + 1};
-    
-    while (true) {
-        clear();
-        
-        // Draw border
-        for (int i = 0; i < 22; i++) {
-            mvaddch(0, i, '#');      // Top border
-            mvaddch(21, i, '#');     // Bottom border
-        }
-        for (int i = 0; i < 22; i++) {
-            mvaddch(i, 0, '#');      // Left border
-            mvaddch(i, 21, '#');     // Right border
-        }
-        
-        // Draw snake and food
-        mvaddch(snake.y, snake.x, 'O');  // Snake head
-        mvaddch(food.y, food.x, '*');    // Food
-        
-        refresh();
-        
-        // Get input (with timeout)
-        timeout(200);  // Wait 200ms for input
-        int ch = getch();
-        
-        // Move snake based on input
-        switch (ch) {
-            case KEY_UP:    snake.y--; break;
-            case KEY_DOWN:  snake.y++; break;
-            case KEY_LEFT:  snake.x--; break;
-            case KEY_RIGHT: snake.x++; break;
-            case 'q':       goto quit;  // Quit game
-        }
-        
-        // Check boundaries
-        if (snake.x <= 0 || snake.x >= 21 || 
-            snake.y <= 0 || snake.y >= 21) {
-            mvprintw(11, 8, "Game Over!");
-            refresh();
-            getch();
-            break;
-        }
-    }
-    
-    quit:
-    endwin();
-    return 0;
-}
-```
 
 ---
 
