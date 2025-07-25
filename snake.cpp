@@ -78,6 +78,7 @@ int main() {
     }
     
     // Game over screen using ncurses
+    nodelay(stdscr, FALSE); // Turn off non-blocking mode for final input
     clear();
     printw("Game Over!\n");
     printw("Final Score: %d\n", score);
@@ -161,10 +162,6 @@ void draw()
         }
         addch('\n');
     }
-
-    for (int i = 0; i < width + 2; i++)
-        addch('#');
-    addch('\n');
 
     printw("Score: %d\n", score); // Use ncurses printw instead of cout
     printw("Press 'X' to quit the game.\n");
