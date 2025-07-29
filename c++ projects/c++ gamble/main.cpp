@@ -19,6 +19,9 @@ const char randomNumberMessage[] = "The random number is: ";
 const char correctGuessMessage[] = "You guessed correctly! Your new balance is: ";
 const char wrongGuessMessage[] = "You guessed wrong! Your new balance is: ";
 const char replayMessage[] = "Do you want to play again? y or q to quit";
+const char exitMessage[] = "Thanks for playing!";
+const char exitinvalidMessage[] = "Invalid choice, going to assume you want to quit.";
+const char brokeMessage[] = "You are broke! Game over!";
 
 const int quit = 'q';
 const int playAgain = 'y';
@@ -83,19 +86,19 @@ int main()
         cin >> choice;
         if (choice == quit)
         {
-            cout << "Thanks for playing!" << endl;
+            cout << exitMessage << endl;
             playingGame = false;
         }
         else if (choice != playAgain)
         {
-            cout << "Invalid choice. Thanks for playing!" << endl;
+            cout << exitinvalidMessage << endl;
             playingGame = false;
         }
     }
     
     if (money <= 0)
     {
-        cout << "You're out of money! Game over!" << endl;
+        cout << brokeMessage << endl;
     }
     
     return 0;
