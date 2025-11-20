@@ -1,3 +1,2 @@
-# projects
-This file is going to be a test to see if this works!
-oie;rgj;eorgi
+# Projects
+This is where all of my coding files will be stored.
