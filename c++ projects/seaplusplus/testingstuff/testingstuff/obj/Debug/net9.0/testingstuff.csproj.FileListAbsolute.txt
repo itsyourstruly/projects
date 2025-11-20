@@ -1,0 +1,4 @@
+/Users/matt/Library/CloudStorage/OneDrive-TallahasseeStateCollege/seaplusplus/testingstuff/testingstuff/obj/Debug/net9.0/testingstuff.GeneratedMSBuildEditorConfig.editorconfig
+/Users/matt/Library/CloudStorage/OneDrive-TallahasseeStateCollege/seaplusplus/testingstuff/testingstuff/obj/Debug/net9.0/testingstuff.AssemblyInfoInputs.cache
+/Users/matt/Library/CloudStorage/OneDrive-TallahasseeStateCollege/seaplusplus/testingstuff/testingstuff/obj/Debug/net9.0/testingstuff.AssemblyInfo.cs
+/Users/matt/Library/CloudStorage/OneDrive-TallahasseeStateCollege/seaplusplus/testingstuff/testingstuff/obj/Debug/net9.0/testingstuff.csproj.CoreCompileInputs.cache

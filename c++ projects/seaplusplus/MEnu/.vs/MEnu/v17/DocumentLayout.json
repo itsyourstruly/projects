@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\fireb\\OneDrive - Tallahassee State College\\seaplusplus\\MEnu\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CBEDDB93-CB6B-4E7B-8D07-EEF07B684B41}|MEnu\\MEnu.vcxproj|C:\\Users\\fireb\\OneDrive - Tallahassee State College\\seaplusplus\\MEnu\\MEnu\\MEnu.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{CBEDDB93-CB6B-4E7B-8D07-EEF07B684B41}|MEnu\\MEnu.vcxproj|solutionrelative:MEnu\\MEnu.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Menu.cpp",
+              "DocumentMoniker": "C:\\Users\\fireb\\OneDrive - Tallahassee State College\\seaplusplus\\MEnu\\MEnu\\Menu.cpp",
+              "RelativeDocumentMoniker": "MEnu\\Menu.cpp",
+              "ToolTip": "C:\\Users\\fireb\\OneDrive - Tallahassee State College\\seaplusplus\\MEnu\\MEnu\\Menu.cpp",
+              "RelativeToolTip": "MEnu\\Menu.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-05-09T14:12:02.133Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
