@@ -14,12 +14,12 @@ const char maxPrompt[] = "Please enter the maximum value: ";
 const char outputPrompt[] = "Enter c to output to console or f to output to file: ";
 const char outputFileNamePrompt[] = "Please enter the output file name: ";
 
-void Generator(int count, float min, float max, const string &choice);
+void Generator(int count, int min, int max, const string &choice);
 
 int main()
 {
     int numCount = 0;
-    float minValue = 0.0f, maxValue = 0.0f;
+    int minValue, maxValue;
     string inputChoice;
 
     cout << introText << '\n';
@@ -55,15 +55,15 @@ int main()
     return 0;
 }
 
-void Generator(int count, float min, float max, const string &choice)
+void Generator(int count, int min, int max, const string &choice)
 {
-    vector<float> numbers;
+    vector<int> numbers;
     numbers.reserve(count);
 
-    // random generator for floats in [min, max]
+    // random generator for integers in [min, max]
     random_device rd;
     mt19937 gen(rd());
-    uniform_real_distribution<float> dist(min, max);
+    uniform_int_distribution<int> dist(min, max);
 
     for (int i = 0; i < count; ++i) {
         numbers.push_back(dist(gen));
@@ -78,8 +78,8 @@ void Generator(int count, float min, float max, const string &choice)
             cerr << "Failed to open output.txt for writing\n";
             return;
         }
-        for (float v : numbers) ofs << v << '\n';
+        for (int v : numbers) ofs << v << '\n';
     } else {
-        for (float v : numbers) cout << v << '\n';
+        for (int v : numbers) cout << v << '\n';
     }
 }
