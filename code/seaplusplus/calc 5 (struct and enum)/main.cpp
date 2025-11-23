@@ -11,7 +11,6 @@
 
 using namespace std;
 
-// --- LAB 5: enum Definition ---
 enum MenuChoice
 {
     ADD = 1,
@@ -32,7 +31,6 @@ enum MenuChoice
     EXIT
 };
 
-// --- LAB 5: struct Definition ---
 struct DataItem
 {
     int id;
@@ -125,8 +123,6 @@ int getInput(char* inputChoicePtr, double* n1Ptr, double* n2Ptr, ifstream* f);
 int getListInput(char* inputChoicePtr, DataItem* list, int maxSize, ifstream* f);
 double calculate(MenuChoice* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, DataItem* listPtr, int size);
 int sendOutput(char* outputChoicePtr, double* n1Ptr, char* opPtr, double* n2Ptr, double* resultPtr, ofstream* f);
-
-// LAB 4: Robust input validation helper
 bool isNumeric(string s);
 
 // Sorting and searching function prototypes
