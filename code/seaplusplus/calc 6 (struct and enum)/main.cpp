@@ -11,6 +11,34 @@
 
 using namespace std;
 
+// --- LAB 5: enum Definition ---
+enum MenuChoice
+{
+    ADD = 1,
+    SUBTRACT,
+    MULTIPLY,
+    DIVIDE,
+    SUM,
+    MEAN,
+    MEDIAN,
+    MIN,
+    MAX,
+    BUBBLE_SORT,
+    SELECTION_SORT,
+    LINEAR_SEARCH,
+    BINARY_SEARCH,
+    C_STRING_COMPARE,
+    STRING_COMPARE,
+    EXIT
+};
+
+// --- LAB 5: struct Definition ---
+struct DataItem
+{
+    int id;
+    double value;
+};
+
 // Text shown to the user
 const char menuOptions[] = "1. Add\n"
                            "2. Subtract\n"
@@ -36,6 +64,9 @@ const char menuPrompt[] = "Please input an option from the above menu (1-16)";
 const char repeatPrompt[] = "Would you like to perform another calculation? (Y/N): ";
 const char inputMethods[] = "Select input method - keyboard (k) or file (f): ";
 const char outputMethods[] = "Select output method - console (c) or file (f): ";
+const char idPrompt[] = "Enter ID (or -1 to finish): ";
+const char valuePrompt[] = "Enter Value: ";
+const char invalidIdError[] = " (invalid ID)";
 const char firstNumberPrompt[] = "Enter first number: ";
 const char secondNumberPrompt[] = "Enter second number: ";
 const char inputFileNamePrompt[] = "Enter input file name: ";
@@ -88,11 +119,11 @@ const char readTwoNumbersError[] = " (failed to read two numbers)";
 const int MAX_SIZE = 100;
 
 // Menu and input/output function prototypes
-void displayMenu(int* choicePtr);
+void displayMenu(MenuChoice* choicePtr);
 void selectIO(char* inputChoicePtr, char* outputChoicePtr);
 int getInput(char* inputChoicePtr, double* n1Ptr, double* n2Ptr, ifstream* f);
-int getListInput(char* inputChoicePtr, double* list, int maxSize, ifstream* f);
-double calculate(int* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, double* listPtr, int size);
+int getListInput(char* inputChoicePtr, DataItem* list, int maxSize, ifstream* f);
+double calculate(MenuChoice* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, DataItem* listPtr, int size);
 int sendOutput(char* outputChoicePtr, double* n1Ptr, char* opPtr, double* n2Ptr, double* resultPtr, ofstream* f);
 
 // LAB 4: Robust input validation helper
@@ -100,30 +131,30 @@ bool isNumeric(string s);
 
 // Sorting and searching function prototypes
 bool g_isSorted = false;
-void printList(const double* list, int size, const string& title, char* outputChoicePtr, ofstream* f, const string& filePrompt = string(outputFileNamePrompt));
-void bubbleSort(double* arr, int size);
-void selectionSort(double* arr, int size);
-int linearSearch(const double* arr, int size, double value);
-int binarySearch(const double* arr, int size, double value);
-bool isSorted(const double* arr, int size);
+void printList(const DataItem* list, int size, const string& title, char* outputChoicePtr, ofstream* f, const string& filePrompt = string(outputFileNamePrompt));
+void bubbleSort(DataItem* arr, int size);
+void selectionSort(DataItem* arr, int size);
+int linearSearch(const DataItem* arr, int size, double value);
+int binarySearch(const DataItem* arr, int size, double value);
+bool isSorted(const DataItem* arr, int size);
 
 // Math function prototypes
 double add(double, double);
 double subtract(double, double);
 double multiply(double, double);
 double divide(double, double);
-double sum(const double* list, int size);
-double mean(const double* list, int size);
-double median(double* list, int size);
-double min(const double* list, int size);
-double max(const double* list, int size);
+double sum(const DataItem* list, int size);
+double mean(const DataItem* list, int size);
+double median(DataItem* list, int size);
+double min(const DataItem* list, int size);
+double max(const DataItem* list, int size);
 
 int main()
 {
-    int choice = 0;
+    MenuChoice choice = ADD;
     double num1 = 0, num2 = 0, result = 0;
     char inputChoice = '\0', outputChoice = '\0', op = '\0', repeat = 'y';
-    double* listPtr = nullptr;
+    DataItem* listPtr = nullptr;
     int count = 0;
     ifstream inputFile;
     ofstream outputFile;
@@ -132,7 +163,7 @@ int main()
     {
         displayMenu(&choice);
 
-        if (choice == 16)
+        if (choice == EXIT)
         {
             cout << endl
                  << exitMessage << endl;
@@ -140,7 +171,7 @@ int main()
         }
 
         // Basic math operations
-        if (choice >= 1 && choice <= 4)
+        if (choice >= ADD && choice <= DIVIDE)
         {
             selectIO(&inputChoice, &outputChoice);
             if (getInput(&inputChoice, &num1, &num2, &inputFile) != 0)
@@ -152,12 +183,12 @@ int main()
             sendOutput(&outputChoice, &num1, &op, &num2, &result, &outputFile);
         }
         // Statistics operations
-        else if (choice >= 5 && choice <= 9)
+        else if (choice >= SUM && choice <= MAX)
         {
             selectIO(&inputChoice, &outputChoice);
 
-            // Create array for list of numbers
-            listPtr = new double[MAX_SIZE];
+            // Create array for list of DataItem structs
+            listPtr = new DataItem[MAX_SIZE];
             count = getListInput(&inputChoice, listPtr, MAX_SIZE, &inputFile);
 
             if (count <= 0)
@@ -179,12 +210,12 @@ int main()
             listPtr = nullptr;
         }
         // Sorting operations
-        else if (choice == 10 || choice == 11)
+        else if (choice == BUBBLE_SORT || choice == SELECTION_SORT)
         {
             selectIO(&inputChoice, &outputChoice);
 
-            // Create array for list of numbers
-            listPtr = new double[MAX_SIZE];
+            // Create array for list of DataItem structs
+            listPtr = new DataItem[MAX_SIZE];
             count = getListInput(&inputChoice, listPtr, MAX_SIZE, &inputFile);
 
             if (count <= 0)
@@ -200,7 +231,7 @@ int main()
             // Show original list before sorting
             printList(listPtr, count, string(originalListTitle), &outputChoice, &outputFile, unsortedFilePrompt);
 
-            if (choice == 10)
+            if (choice == BUBBLE_SORT)
             {
                 bubbleSort(listPtr, count);
                 printList(listPtr, count, string(bubbleSortedListTitle), &outputChoice, &outputFile, sortedFilePrompt);
@@ -216,12 +247,12 @@ int main()
             listPtr = nullptr;
         }
         // Search operations
-        else if (choice == 12 || choice == 13)
+        else if (choice == LINEAR_SEARCH || choice == BINARY_SEARCH)
         {
             selectIO(&inputChoice, &outputChoice);
 
-            // Create array for list of numbers
-            listPtr = new double[MAX_SIZE];
+            // Create array for list of DataItem structs
+            listPtr = new DataItem[MAX_SIZE];
             count = getListInput(&inputChoice, listPtr, MAX_SIZE, &inputFile);
 
             if (count <= 0)
@@ -250,7 +281,7 @@ int main()
             }
 
             // Do linear search
-            if (choice == 12)
+            if (choice == LINEAR_SEARCH)
             {
                 index = linearSearch(listPtr, count, targetValue);
             }
@@ -318,8 +349,8 @@ int main()
             delete[] listPtr;
             listPtr = nullptr;
         }
-        // String comparison operations (14 and 15)
-        else if (choice == 14 || choice == 15)
+        // String comparison operations
+        else if (choice == C_STRING_COMPARE || choice == STRING_COMPARE)
         {
             calculate(&choice, &op, &num1, &num2, nullptr, 0);
         }
@@ -343,49 +374,49 @@ int main()
 }
 
 // Do the calculation based on user's choice
-double calculate(int* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, double* listPtr, int size)
+double calculate(MenuChoice* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, DataItem* listPtr, int size)
 {
     double r = 0;
     switch (*choicePtr)
     {
-    case 1:
+    case ADD:
         *opPtr = '+';
         r = add(*n1Ptr, *n2Ptr);
         break;
-    case 2:
+    case SUBTRACT:
         *opPtr = '-';
         r = subtract(*n1Ptr, *n2Ptr);
         break;
-    case 3:
+    case MULTIPLY:
         *opPtr = '*';
         r = multiply(*n1Ptr, *n2Ptr);
         break;
-    case 4:
+    case DIVIDE:
         *opPtr = '/';
         r = divide(*n1Ptr, *n2Ptr);
         break;
-    case 5:
+    case SUM:
         *opPtr = 'S';
         r = sum(listPtr, size);
         break;
-    case 6:
+    case MEAN:
         *opPtr = 'A';
         r = mean(listPtr, size);
         break;
-    case 7:
+    case MEDIAN:
         *opPtr = 'D';
         r = median(listPtr, size);
         break;
-    case 8:
+    case MIN:
         *opPtr = 'm';
         r = min(listPtr, size);
         break;
-    case 9:
+    case MAX:
         *opPtr = 'X';
         r = max(listPtr, size);
         break;
 
-    case 14: // C-String Comparison
+    case C_STRING_COMPARE:
         {
             cout << cStringComparisonTitle << endl;
             char str1[100];
@@ -419,7 +450,7 @@ double calculate(int* choicePtr, char* opPtr, double* n1Ptr, double* n2Ptr, doub
         }
         break;
 
-    case 15: // std::string Comparison
+    case STRING_COMPARE:
         {
             cout << stringComparisonTitle << endl;
             string str1, str2;
@@ -542,20 +573,18 @@ double divide(double num1, double num2)
 }
 
 // Add up all numbers in a list
-double sum(const double* list, int size)
+double sum(const DataItem* list, int size)
 {
     double s = 0.0;
-    const double* p = list;
     for (int i = 0; i < size; ++i)
     {
-        s += *p;
-        p++;
+        s += list[i].value;
     }
     return s;
 }
 
 // Find the average of numbers in a list
-double mean(const double* list, int size)
+double mean(const DataItem* list, int size)
 {
     if (size <= 0)
         return 0.0;
@@ -563,15 +592,15 @@ double mean(const double* list, int size)
 }
 
 // Find the middle value in a list
-double median(double* list, int size)
+double median(DataItem* list, int size)
 {
     if (size <= 0)
         return 0.0;
-    // Make a copy of the list to sort without changing the original
+    // Make a copy of the values to sort without changing the original
     double* tmp = new double[size];
     for (int i = 0; i < size; ++i)
     {
-        tmp[i] = list[i];
+        tmp[i] = list[i].value;
     }
     sort(tmp, tmp + size);
     double result;
@@ -591,37 +620,36 @@ double median(double* list, int size)
 }
 
 // Find the smallest number in a list
-double min(const double* list, int size)
+double min(const DataItem* list, int size)
 {
     if (size <= 0)
         return 0.0;
-    double m = *list;
-    const double* p = list + 1;
+    double m = list[0].value;
     for (int i = 1; i < size; ++i)
     {
-        if (*p < m)
-            m = *p;
-        p++;
+        if (list[i].value < m)
+            m = list[i].value;
     }
     return m;
 }
 
 // Find the largest number in a list
-double max(const double* list, int size)
+double max(const DataItem* list, int size)
 {
     if (size <= 0)
         return 0.0;
-    double m = list[0];
+    double m = list[0].value;
     for (int i = 1; i < size; ++i)
-        if (list[i] > m)
-            m = list[i];
+        if (list[i].value > m)
+            m = list[i].value;
     return m;
 }
 
 // Display menu and get user's choice
-void displayMenu(int* choicePtr)
+void displayMenu(MenuChoice* choicePtr)
 {
     string input;
+    int intChoice = 0;
     while (true)
     {
         cout << menuTitle << endl;
@@ -640,7 +668,7 @@ void displayMenu(int* choicePtr)
         // Convert to int using stoi
         try
         {
-            *choicePtr = stoi(input);
+            intChoice = stoi(input);
         }
         catch (...)
         {
@@ -649,25 +677,55 @@ void displayMenu(int* choicePtr)
         }
 
         // Check if choice is in valid range
-        if (*choicePtr >= 1 && *choicePtr <= 16)
+        if (intChoice >= 1 && intChoice <= 16)
+        {
+            *choicePtr = static_cast<MenuChoice>(intChoice);
             break;
+        }
 
         cout << choiceOutOfRangeMessage << endl;
     }
 }
 
 // Read a list from keyboard or file
-int getListInput(char* inputChoicePtr, double* list, int maxSize, ifstream* f)
+int getListInput(char* inputChoicePtr, DataItem* list, int maxSize, ifstream* f)
 {
     int count = 0;
     if (*inputChoicePtr == 'k')
     {
         cout << enterNumbersPrompt << endl;
+        int id = 0;
         double v = 0;
         while (count < maxSize)
         {
-            cout << numberPrompt;
+            // Read ID
+            cout << idPrompt;
             string input;
+            getline(cin, input);
+
+            // Validate input using isNumeric
+            if (!isNumeric(input))
+            {
+                cerr << errorMessage << invalidIdError << endl;
+                continue;
+            }
+
+            try
+            {
+                id = stoi(input);
+            }
+            catch (...)
+            {
+                cerr << errorMessage << invalidIdError << endl;
+                continue;
+            }
+
+            // Check for sentinel value
+            if (id == -1)
+                break;
+
+            // Read Value
+            cout << valuePrompt;
             getline(cin, input);
 
             // Validate input using isNumeric
@@ -687,9 +745,9 @@ int getListInput(char* inputChoicePtr, double* list, int maxSize, ifstream* f)
                 continue;
             }
 
-            if (v == -1)
-                break;
-            list[count] = v;
+            // Store in DataItem struct
+            list[count].id = id;
+            list[count].value = v;
             count++;
         }
         if (count == 0)
@@ -714,20 +772,26 @@ int getListInput(char* inputChoicePtr, double* list, int maxSize, ifstream* f)
             else
                 break;
         }
-        // Read numbers from file (supports plain numbers or "index: value" format)
+        // Read DataItem records from file (supports "id value" or "index: id value" format)
         string line;
         while (getline(*f, line) && count < maxSize)
         {
             if (line.empty())
                 continue;
+
+            // Remove "index: " prefix if present
             size_t colonPos = line.find(':');
             string toParse = (colonPos != string::npos) ? line.substr(colonPos + 1) : line;
 
             istringstream ss(toParse);
+            int id;
             double value;
-            while (ss >> value && count < maxSize)
+
+            // Read both ID and value
+            if (ss >> id >> value)
             {
-                list[count] = value;
+                list[count].id = id;
+                list[count].value = value;
                 count++;
             }
         }
@@ -863,14 +927,14 @@ int getInput(char* inputChoicePtr, double* n1Ptr, double* n2Ptr, ifstream* f)
 }
 
 // Print list to console or file
-void printList(const double* list, int size, const string& title, char* outputChoicePtr, ofstream* f, const string& filePrompt)
+void printList(const DataItem* list, int size, const string& title, char* outputChoicePtr, ofstream* f, const string& filePrompt)
 {
     if (*outputChoicePtr == 'c')
     {
         cout << "\n--- " << title << " ---" << endl;
         for (int i = 0; i < size; ++i)
         {
-            cout << i << ": " << list[i] << endl;
+            cout << i << ": ID=" << list[i].id << " Value=" << list[i].value << endl;
         }
     }
     else if (*outputChoicePtr == 'f')
@@ -886,20 +950,20 @@ void printList(const double* list, int size, const string& title, char* outputCh
         }
         for (int i = 0; i < size; ++i)
         {
-            *f << i << ": " << list[i] << endl;
+            *f << i << ": ID=" << list[i].id << " Value=" << list[i].value << endl;
         }
         f->close();
     }
 }
 
 // Sort list from smallest to largest using bubble sort
-void bubbleSort(double* arr, int size)
+void bubbleSort(DataItem* arr, int size)
 {
     for (int i = 0; i < size - 1; ++i)
     {
         for (int j = 0; j < size - i - 1; ++j)
         {
-            if (arr[j] > arr[j + 1])
+            if (arr[j].value > arr[j + 1].value)
                 swap(arr[j], arr[j + 1]);
         }
     }
@@ -907,13 +971,13 @@ void bubbleSort(double* arr, int size)
 }
 
 // Sort list from smallest to largest using selection sort
-void selectionSort(double* arr, int size)
+void selectionSort(DataItem* arr, int size)
 {
     for (int i = 0; i < size - 1; ++i)
     {
         int minIdx = i;
         for (int j = i + 1; j < size; ++j)
-            if (arr[j] < arr[minIdx])
+            if (arr[j].value < arr[minIdx].value)
                 minIdx = j;
         if (minIdx != i)
             swap(arr[i], arr[minIdx]);
@@ -922,25 +986,25 @@ void selectionSort(double* arr, int size)
 }
 
 // Search through list one by one to find a value
-int linearSearch(const double* arr, int size, double value)
+int linearSearch(const DataItem* arr, int size, double value)
 {
     for (int i = 0; i < size; ++i)
-        if (arr[i] == value)
+        if (arr[i].value == value)
             return i;
     return -1;
 }
 
 // Search through sorted list by dividing in half repeatedly
-int binarySearch(const double* arr, int size, double value)
+int binarySearch(const DataItem* arr, int size, double value)
 {
     int left = 0;
     int right = size - 1;
     while (left <= right)
     {
         int mid = left + (right - left) / 2;
-        if (arr[mid] == value)
+        if (arr[mid].value == value)
             return mid;
-        else if (arr[mid] < value)
+        else if (arr[mid].value < value)
             left = mid + 1;
         else
             right = mid - 1;
@@ -949,11 +1013,11 @@ int binarySearch(const double* arr, int size, double value)
 }
 
 // Check if list is sorted from smallest to largest
-bool isSorted(const double* arr, int size)
+bool isSorted(const DataItem* arr, int size)
 {
     for (int i = 1; i < size; ++i)
     {
-        if (arr[i - 1] > arr[i])
+        if (arr[i - 1].value > arr[i].value)
             return false;
     }
     return true;
