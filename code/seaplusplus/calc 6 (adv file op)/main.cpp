@@ -28,6 +28,9 @@ enum MenuChoice
     BINARY_SEARCH,
     C_STRING_COMPARE,
     STRING_COMPARE,
+    SAVE_LIST,
+    LOAD_LIST,
+    VIEW_RECORD,
     EXIT
 };
 
@@ -55,10 +58,14 @@ const char menuOptions[] = "1. Add\n"
                            "--- String Operations ---\n"
                            "14. C-String Comparison\n"
                            "15. std::string Comparison\n"
+                           "--- File Operations ---\n"
+                           "16. Save List to Binary File\n"
+                           "17. Load List from Binary File & Run Stats\n"
+                           "18. View Single Record from Binary File\n"
                            "--- System ---\n"
-                           "16. Exit\n";
+                           "19. Exit\n";
 const char menuTitle[] = "Calculator Menu";
-const char menuPrompt[] = "Please input an option from the above menu (1-16)";
+const char menuPrompt[] = "Please input an option from the above menu (1-19)";
 const char repeatPrompt[] = "Would you like to perform another calculation? (Y/N): ";
 const char inputMethods[] = "Select input method - keyboard (k) or file (f): ";
 const char outputMethods[] = "Select output method - console (c) or file (f): ";
@@ -98,8 +105,19 @@ const char lessThanMessage[] = "String 1 is lexicographically LESS THAN String 2
 const char greaterThanMessage[] = "String 1 is lexicographically GREATER THAN String 2";
 const char equalToMessage[] = "String 1 is lexicographically EQUAL TO String 2";
 const char divideByZeroError[] = "cannot divide by zero";
-const char invalidInputMessage[] = "Invalid input. Please enter a number between 1 and 16.";
+const char invalidInputMessage[] = "Invalid input. Please enter a number between 1 and 19.";
 const char choiceOutOfRangeMessage[] = "Choice out of range. Try again.";
+const char dataFileName[] = "dataset.bin";
+const char saveListTitle[] = "\n--- Save List to Binary File ---";
+const char loadListTitle[] = "\n--- Load List from Binary File & Run Stats ---";
+const char viewRecordTitle[] = "\n--- View Single Record ---";
+const char recordIndexPrompt[] = "Enter record index (0-based): ";
+const char noDataFileError[] = "No data file found. Please save a list first.";
+const char invalidRecordError[] = " (invalid record index)";
+const char recordNotFoundError[] = "Record not found. Index may be out of bounds.";
+const char listSavedMessage[] = "List successfully saved to binary file.";
+const char recordLabel[] = "Record ";
+const char statsHeader[] = "\n--- Statistics for Loaded Data ---";
 const char enterNumbersPrompt[] = "Enter numbers one at a time. Enter -1 to finish (sentinel).";
 const char numberPrompt[] = "Number: ";
 const char invalidNumberError[] = " (invalid number)";
@@ -350,6 +368,11 @@ int main()
         {
             calculate(&choice, &op, &num1, &num2, nullptr, 0);
         }
+        // File operations
+        else if (choice == SAVE_LIST || choice == LOAD_LIST || choice == VIEW_RECORD)
+        {
+            calculate(&choice, &op, &num1, &num2, nullptr, 0);
+        }
         else
         {
             cout << invalidChoiceMessage << endl;
@@ -474,6 +497,223 @@ double calculate(MenuChoice* choicePtr, char* opPtr, double* n1Ptr, double* n2Pt
                 cout << equalToMessage << endl;
             }
             *opPtr = 'S'; // std::string comparison marker
+        }
+        break;
+
+    case SAVE_LIST:
+        {
+            cout << saveListTitle << endl;
+
+            // Allocate array for list
+            listPtr = new DataItem[MAX_SIZE];
+
+            // Get input from keyboard
+            cout << enterNumbersPrompt << endl;
+            int id = 0;
+            double v = 0;
+            int count = 0;
+
+            while (count < MAX_SIZE)
+            {
+                // Read ID
+                cout << idPrompt;
+                string input;
+                getline(cin, input);
+
+                // Validate input using isNumeric
+                if (!isNumeric(input))
+                {
+                    cerr << errorMessage << invalidIdError << endl;
+                    continue;
+                }
+
+                try
+                {
+                    id = stoi(input);
+                }
+                catch (...)
+                {
+                    cerr << errorMessage << invalidIdError << endl;
+                    continue;
+                }
+
+                // Check for sentinel value
+                if (id == -1)
+                    break;
+
+                // Read Value
+                cout << valuePrompt;
+                getline(cin, input);
+
+                // Validate input using isNumeric
+                if (!isNumeric(input))
+                {
+                    cerr << errorMessage << invalidNumberError << endl;
+                    continue;
+                }
+
+                try
+                {
+                    v = stod(input);
+                }
+                catch (...)
+                {
+                    cerr << errorMessage << convertNumberError << endl;
+                    continue;
+                }
+
+                // Store in DataItem struct
+                listPtr[count].id = id;
+                listPtr[count].value = v;
+                count++;
+            }
+
+            if (count > 0)
+            {
+                // Open binary file for writing
+                fstream dataFile;
+                dataFile.open(dataFileName, ios::out | ios::binary);
+
+                if (!dataFile)
+                {
+                    cerr << errorMessage << openFileError << endl;
+                }
+                else
+                {
+                    // Write entire array to file
+                    dataFile.write(reinterpret_cast<char*>(listPtr), count * sizeof(DataItem));
+                    dataFile.close();
+                    cout << listSavedMessage << endl;
+                }
+            }
+            else
+            {
+                cerr << noNumbersEnteredError << endl;
+            }
+
+            // Clean up memory
+            delete[] listPtr;
+            listPtr = nullptr;
+            *opPtr = 'F'; // File operation marker
+        }
+        break;
+
+    case LOAD_LIST:
+        {
+            cout << loadListTitle << endl;
+
+            // Open binary file for reading
+            fstream dataFile;
+            dataFile.open(dataFileName, ios::in | ios::binary);
+
+            if (!dataFile)
+            {
+                cerr << errorMessage << " " << noDataFileError << endl;
+            }
+            else
+            {
+                // Get file size
+                dataFile.seekg(0, ios::end);
+                long fileSize = dataFile.tellg();
+
+                // Calculate number of records
+                int numRecords = fileSize / sizeof(DataItem);
+
+                if (numRecords > 0)
+                {
+                    // Allocate array
+                    listPtr = new DataItem[numRecords];
+
+                    // Seek to beginning
+                    dataFile.seekg(0, ios::beg);
+
+                    // Read entire file
+                    dataFile.read(reinterpret_cast<char*>(listPtr), fileSize);
+
+                    if (dataFile.fail())
+                    {
+                        cerr << errorMessage << openFileError << endl;
+                    }
+                    else
+                    {
+                        // Run all statistics
+                        cout << statsHeader << endl;
+                        cout << sumLabel << " = " << sum(listPtr, numRecords) << endl;
+                        cout << meanLabel << " = " << mean(listPtr, numRecords) << endl;
+                        cout << medianLabel << " = " << median(listPtr, numRecords) << endl;
+                        cout << minLabel << " = " << min(listPtr, numRecords) << endl;
+                        cout << maxLabel << " = " << max(listPtr, numRecords) << endl;
+                    }
+
+                    // Clean up memory
+                    delete[] listPtr;
+                    listPtr = nullptr;
+                }
+                else
+                {
+                    cerr << noNumbersInFileError << endl;
+                }
+
+                dataFile.close();
+            }
+            *opPtr = 'L'; // Load operation marker
+        }
+        break;
+
+    case VIEW_RECORD:
+        {
+            cout << viewRecordTitle << endl;
+
+            // Open binary file for reading
+            fstream dataFile;
+            dataFile.open(dataFileName, ios::in | ios::binary);
+
+            if (!dataFile)
+            {
+                cerr << errorMessage << " " << noDataFileError << endl;
+            }
+            else
+            {
+                // Get record index from user
+                cout << recordIndexPrompt;
+                string input;
+                getline(cin, input);
+
+                if (!isNumeric(input))
+                {
+                    cerr << errorMessage << invalidRecordError << endl;
+                }
+                else
+                {
+                    try
+                    {
+                        int index = stoi(input);
+
+                        // Seek to record position
+                        dataFile.seekg(index * sizeof(DataItem), ios::beg);
+
+                        // Read single record
+                        DataItem temp;
+                        dataFile.read(reinterpret_cast<char*>(&temp), sizeof(DataItem));
+
+                        if (dataFile.fail())
+                        {
+                            cerr << errorMessage << " " << recordNotFoundError << endl;
+                        }
+                        else
+                        {
+                            cout << recordLabel << index << ": ID=" << temp.id << " Value=" << temp.value << endl;
+                        }
+                    }
+                    catch (...)
+                    {
+                        cerr << errorMessage << invalidRecordError << endl;
+                    }
+                }
+
+                dataFile.close();
+            }
+            *opPtr = 'V'; // View operation marker
         }
         break;
 
@@ -672,7 +912,7 @@ void displayMenu(MenuChoice* choicePtr)
         }
 
         // Check if choice is in valid range
-        if (intChoice >= 1 && intChoice <= 16)
+        if (intChoice >= 1 && intChoice <= 19)
         {
             *choicePtr = static_cast<MenuChoice>(intChoice);
             break;

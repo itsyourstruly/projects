@@ -1,22 +1,59 @@
 #include <iostream>
+#include <string>
+#include <vector>
 
-void math(const int *num, int size);
+using namespace std;
+
+struct cat {
+    string name;
+    int age;
+    string color;
+    string type;
+    string gender;
+};
+
+void displayMessage(cat list[], int size);
+void addCat(cat list[]);
 
 int main()
 {
-    const int SIZE = 5;
-    const int numbers[SIZE]  {10, 20, 30, 40, 50};
-    int morenumbers[SIZE] {5,10,15,20,25};
+    // const int SIZE = 3;
+    vector<cat> catList[SIZE];
+    // string input;
 
-    math(numbers, SIZE);
-    math(morenumbers, SIZE);
+    catList[0] = {"Apollo", 1, "Black", "Bombay", "M"};
+    catList[1] = {"Bonnie", 9, "Gray", "Domestic Short Hair", "F"};
 
+
+
+    displayMessage(catList, SIZE);
+    addCat(catList);
+
+    return 0;
 
 }
 
-void math(const int *num, int size) {
+
+void displayMessage(cat list[], int size) {
     for (int i = 0; i < size; i++) {
-        std::cout << *(num + i) << " ";
+        cout << "Cat: " << list[i].name
+             << ", Age: " << list[i].age
+             << ", Color: " << list[i].color
+             << ", Type: " << list[i].type
+             << ", Gender: " << list[i].gender << '\n';
     }
-    std::cout << '\n';
+}
+void addCat(cat list[]) {
+    cout << "Lets add a new cat!\n";
+    cout << "Enter name: ";
+    getline(cin, list[2].name);
+    cout << "Enter age: ";
+    cin >> list[2].age;
+    cout << "Enter color: ";
+    cin.ignore();
+    getline(cin, list[2].color);
+    cout << "Enter Type: ";
+    getline(cin, list[2].type);
+    cout << "Enter Gender: ";
+    getline(cin, list[2].gender);
 }
