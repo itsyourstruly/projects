@@ -6,13 +6,28 @@
 #include <fstream>
 #include <cstdio>
 #include <unistd.h>
+#include <cstring>
+#include <set>
 
 namespace fs = std::filesystem;
 
 // Directory configuration
+// Cloud storage options:
+// 1. Local only: "files"
+// 2. Rclone mount: "/home/pi/cloud/files" (or your mounted path)
+// 3. Synced folder: point to your rclone sync directory
 const std::string BASE_DIR = "files";
 const std::string TEMPLATES_DIR = "templates";
 std::string currentPath = BASE_DIR;
+
+// Cloud sync configuration (rclone)
+// To find your remote name, run: rclone listremotes
+// Your configured remote: "Google Drive" ✅
+const bool ENABLE_CLOUD_SYNC = true; // Cloud sync is ENABLED
+const std::string RCLONE_REMOTE = "Google Drive"; // Your Google Drive remote
+const std::string RCLONE_PATH = "typewriter/files"; // Path on your cloud storage
+const int SYNC_DELAY_SECONDS = 2; // Delay after file operations before syncing
+
 
 // UI Layout configuration
 const int COLUMN_WIDTH = 30; // Width of each file column
@@ -27,52 +42,88 @@ const char KEY_RENAME = 'r';
 const char KEY_DELETE_ALT = 'd'; // Alternative delete key
 const char KEY_BACK = 'b';
 const char KEY_CONVERT = 'c'; // Convert markdown to Word
+const char KEY_SELECT_MODE = 's'; // Selection mode toggle
+const char KEY_MOVE_ITEMS = 'v'; // Move selected items
+const char KEY_UNDO_ACTION = 'z'; // Undo last action
 const char KEY_QUIT = 'q';
-// Primary delete uses the actual Delete key (KEY_DC in ncurses)
 
 // UI Text - easy to customize
 const char* TEXT_HEADER = "Happy Writing!";
-const char* TEXT_SEPARATOR = "----------------------------------------";
-const char* TEXT_HOME_FOLDER = "You are in the home folder";
-const char* TEXT_YOU_ARE_IN = "You are in the '%s' folder";
-const char* TEXT_PAGE_INDICATOR = "Page %d/%d";
-const char* TEXT_NO_FILES = "(No files - press 'n' to create one)";
+const char* TEXT_SEPARATOR = "----------------------------------------------------------------------------------------------";
+const char* TEXT_HOME_FOLDER = "Presenting the home";
+const char* TEXT_YOU_ARE_IN = "Presenting %s";
+const char* TEXT_PAGE_INDICATOR = "Page %d of %d";
+const char* TEXT_NO_FILES = "empty canvas";
 const char* TEXT_CONTROLS = "Controls:";
+const char* TEXT_FOLDER_LABEL = "[]";
+const char* TEXT_STATUS_PREFIX = "Status: ";
 
 // Control labels
-const char* TEXT_ARROWS = "Arrows: Navigate";
-const char* TEXT_ENTER = "ENTER: Open";
-const char* TEXT_NEW_FILE_LABEL = "New File";
+const char* TEXT_ARROWS = "arrows: Navigate";
+const char* TEXT_ENTER = "enter: Open";
+const char* TEXT_NEW_FILE_LABEL = "New note";
 const char* TEXT_NEW_FOLDER_LABEL = "New Folder";
-const char* TEXT_RENAME_LABEL = "Rename";
-const char* TEXT_DELETE_LABEL = "Delete";
+const char* TEXT_RENAME_LABEL = "Retitle";
+const char* TEXT_DELETE_LABEL = "Scrap";
 const char* TEXT_DELETE_KEY_LABEL = "DEL"; // Display name for delete key
 const char* TEXT_CONVERT_LABEL = "Convert";
 const char* TEXT_BACK_LABEL = "Back";
-const char* TEXT_QUIT_LABEL = "Quit";
+const char* TEXT_QUIT_LABEL = "Leave";
+const char* TEXT_SELECT_LABEL = "Choose";
+const char* TEXT_UNDO_LABEL = "Rewind";
 
 // Prompt messages
-const char* TEXT_PROMPT_NEW_FILE = "Enter new filename (press ESC to cancel): ";
-const char* TEXT_PROMPT_NEW_FOLDER = "Enter new folder name (press ESC to cancel): ";
-const char* TEXT_PROMPT_RENAME = "Enter new name for '%s' (press ESC to cancel): ";
-const char* TEXT_PROMPT_DELETE_CONFIRM = "Delete '%s'? (y/n): ";
-const char* TEXT_PROMPT_SELECT_TEMPLATE = "Select a template (use arrow keys, ENTER to select, ESC to cancel):";
+const char* TEXT_PROMPT_NEW_FILE = "Enter the note's title (X - esc): ";
+const char* TEXT_PROMPT_NEW_FOLDER = "Enter the folder's title (X - esc): ";
+const char* TEXT_PROMPT_RENAME = "Enter new name for '%s' (X - esc): ";
+const char* TEXT_PROMPT_DELETE_CONFIRM = "scrap %s? (y/n): ";
+const char* TEXT_PROMPT_SELECT_TEMPLATE = "Select a Canvas";
+const char* TEXT_PROMPT_TEMPLATE_NAV = "Use arrow keys to navigate, ENTER to select, ESC to cancel";
 
 // Status messages
-const char* TEXT_MSG_IDLE = "working";
-const char* TEXT_MSG_OPENED_FOLDER = "Opened folder: ";
-const char* TEXT_MSG_EDITED_FILE = "Edited file: ";
+const char* TEXT_MSG_IDLE = "Available";
+const char* TEXT_MSG_OPENED_FOLDER = "Entered folder: ";
+const char* TEXT_MSG_EDITED_FILE = "Revised ";
 const char* TEXT_MSG_RETURNED = "Returned to parent folder";
-const char* TEXT_MSG_CREATED_FILE = "Created file: ";
-const char* TEXT_MSG_CREATED_FOLDER = "Created folder: ";
-const char* TEXT_MSG_USER_CANCELLED = "Cancelled by user.";
-const char* TEXT_MSG_ALREADY_EXISTS = "File/folder name already exists.";
-const char* TEXT_MSG_RENAMED = "Renamed: ";
-const char* TEXT_MSG_RENAME_CANCELLED = "Rename cancelled.";
-const char* TEXT_MSG_NO_FILES_RENAME = "No files to rename.";
-const char* TEXT_MSG_DELETED = "Deleted: ";
-const char* TEXT_MSG_DELETE_CANCELLED = "Delete cancelled.";
-const char* TEXT_MSG_NO_FILES_DELETE = "No files to delete.";
+const char* TEXT_MSG_CREATED_FILE = "New note ";
+const char* TEXT_MSG_CREATED_FOLDER = "New folder ";
+const char* TEXT_MSG_USER_CANCELLED = "Withdrew choice";
+const char* TEXT_MSG_ALREADY_EXISTS = "name already exists.";
+const char* TEXT_MSG_RENAMED = "Retitled to ";
+const char* TEXT_MSG_RENAME_CANCELLED = "Kept title";
+const char* TEXT_MSG_NO_FILES_RENAME = "No notes to retitle.";
+const char* TEXT_MSG_DELETED = "Scrapped ";
+const char* TEXT_MSG_DELETE_CANCELLED = "Kept file";
+const char* TEXT_MSG_NO_FILES_DELETE = "No files to scrap.";
+
+// Selection messages
+const char* TEXT_MSG_ITEMS_SELECTED = " item(s) chosen ('esc' to deselect, 'v' to relocate)";
+const char* TEXT_MSG_SELECTION_MODE_ON = "Selection mode ON (press 's' again to lock, use arrows to select)";
+const char* TEXT_MSG_SELECTION_LOCKED = "Selection locked (";
+const char* TEXT_MSG_SELECTION_CANCELLED = "Selection cancelled";
+const char* TEXT_MSG_NO_ITEMS_TO_MOVE = "No assets chosen to move";
+
+// Move operation messages
+const char* TEXT_MSG_MOVED_ITEMS = "Relocated ";
+const char* TEXT_MSG_MOVE_FAILED = " failed)";
+const char* TEXT_MSG_MOVE_ERROR = "Relocation failed";
+const char* TEXT_MSG_NO_ITEMS_MOVE = "No assets to move";
+
+// File operation messages
+const char* TEXT_MSG_OPENED = "Entered ";
+const char* TEXT_MSG_CANNOT_CONVERT_DIR = "Cannot convert a directory";
+const char* TEXT_MSG_FILE_MUST_BE_MD_TXT = "note must be .md or .txt format";
+const char* TEXT_MSG_CONVERTING = "Converting to Word document with MLA formatting...";
+const char* TEXT_MSG_CONVERTED_TO = "Converted to ";
+const char* TEXT_MSG_MLA_APPLIED = " (MLA formatting applied)";
+const char* TEXT_MSG_CONVERSION_FAILED = "Conversion failed"; // (- check /tmp/mla_convert.log, ensure python-docx is installed)
+const char* TEXT_MSG_NO_FILE_FOR_CONVERSION = "No file chosen for conversion";
+const char* TEXT_MSG_BLANK_LABEL = "empty";
+
+// Undo messages
+const char* TEXT_MSG_UNDONE = "Rewound ";
+const char* TEXT_MSG_NOTHING_TO_UNDO = "No actions to rewind";
+const char* TEXT_MSG_UNDO_FAILED = "Rewind failed";
 
 // Function to ensure the files and templates directories exist
 void ensureDirectories() {
@@ -93,7 +144,7 @@ std::vector<std::string> getFiles() {
             if (entry.is_regular_file()) {
                 files.push_back(entry.path().filename().string());
             } else if (entry.is_directory()) {
-                files.push_back("[DIR] " + entry.path().filename().string());
+                files.push_back(TEXT_FOLDER_LABEL + entry.path().filename().string());
             }
         }
     }
@@ -105,7 +156,7 @@ std::vector<std::string> getFiles() {
 // Function to get available templates
 std::vector<std::string> getTemplates() {
     std::vector<std::string> templates;
-    templates.push_back("Blank"); // Always include blank option first
+    templates.push_back(TEXT_MSG_BLANK_LABEL); // Always include blank option first
 
     if (fs::exists(TEMPLATES_DIR) && fs::is_directory(TEMPLATES_DIR)) {
         for (const auto& entry : fs::directory_iterator(TEMPLATES_DIR)) {
@@ -135,6 +186,189 @@ std::vector<std::string> getTemplates() {
     return templates;
 }
 
+// Global selection state (full paths to selected items)
+std::set<std::string> g_selectedPaths; // All selected items
+bool g_selectMode = false; // true when in selection mode (press 's' to toggle)
+int g_anchorIndex = -1; // The index where selection mode started
+std::string g_anchorPath = ""; // The item where selection mode started
+
+// Undo system
+enum UndoActionType {
+    UNDO_NONE,
+    UNDO_CREATE_FILE,
+    UNDO_CREATE_FOLDER,
+    UNDO_DELETE,
+    UNDO_RENAME,
+    UNDO_MOVE
+};
+
+struct UndoAction {
+    UndoActionType type;
+    std::string path1; // source path or created item path
+    std::string path2; // destination path for rename/move
+    std::string content; // file content for deleted files
+    bool wasDirectory; // whether deleted item was a directory
+    std::vector<std::string> movedPaths; // for multiple file moves
+    std::vector<std::string> destPaths; // destination paths for moves
+};
+
+UndoAction g_lastAction = {UNDO_NONE, "", "", "", false, {}, {}};
+
+// Helper: Get full path for a file/folder name in current directory
+std::string getFullPath(const std::string& filename) {
+    std::string actualName = filename;
+    if (filename.substr(0, 2) == "[]") {
+        actualName = filename.substr(2);
+    }
+    return currentPath + "/" + actualName;
+}
+
+// Helper: Get actual filename without folder prefix
+std::string getActualName(const std::string& displayName) {
+    if (displayName.substr(0, 2) == "[]") {
+        return displayName.substr(2);
+    }
+    return displayName;
+}
+
+// Helper: Check if a path is currently selected
+bool isPathSelected(const std::string& fullPath) {
+    return g_selectedPaths.find(fullPath) != g_selectedPaths.end();
+}
+
+// Helper: Toggle selection for a path
+void toggleSelection(const std::string& fullPath) {
+    if (isPathSelected(fullPath)) {
+        g_selectedPaths.erase(fullPath);
+    } else {
+        g_selectedPaths.insert(fullPath);
+    }
+}
+
+// Function to perform undo operation
+bool performUndo(std::string& statusMessage) {
+    if (g_lastAction.type == UNDO_NONE) {
+        statusMessage = TEXT_MSG_NOTHING_TO_UNDO;
+        return false;
+    }
+
+    try {
+        switch (g_lastAction.type) {
+            case UNDO_CREATE_FILE:
+            case UNDO_CREATE_FOLDER: {
+                // Undo creation by deleting the created item
+                if (fs::exists(g_lastAction.path1)) {
+                    fs::remove_all(g_lastAction.path1);
+                    statusMessage = std::string(TEXT_MSG_UNDONE) + "created " + fs::path(g_lastAction.path1).filename().string();
+                    g_lastAction = {UNDO_NONE, "", "", "", false, {}, {}};
+                    return true;
+                }
+                break;
+            }
+
+            case UNDO_DELETE: {
+                // Undo deletion by restoring the item
+                if (g_lastAction.wasDirectory) {
+                    // Restore directory
+                    fs::create_directory(g_lastAction.path1);
+                } else {
+                    // Restore file with its content
+                    std::ofstream outFile(g_lastAction.path1);
+                    if (outFile.is_open()) {
+                        outFile << g_lastAction.content;
+                        outFile.close();
+                    }
+                }
+                statusMessage = std::string(TEXT_MSG_UNDONE) + "deleted " + fs::path(g_lastAction.path1).filename().string();
+                g_lastAction = {UNDO_NONE, "", "", "", false, {}, {}};
+                return true;
+            }
+
+            case UNDO_RENAME: {
+                // Undo rename by renaming back
+                if (fs::exists(g_lastAction.path2)) {
+                    fs::rename(g_lastAction.path2, g_lastAction.path1);
+                    statusMessage = std::string(TEXT_MSG_UNDONE) + "renamed " + fs::path(g_lastAction.path2).filename().string();
+                    g_lastAction = {UNDO_NONE, "", "", "", false, {}, {}};
+                    return true;
+                }
+                break;
+            }
+
+            case UNDO_MOVE: {
+                // Undo move by moving items back
+                int restoredCount = 0;
+                for (size_t i = 0; i < g_lastAction.movedPaths.size() && i < g_lastAction.destPaths.size(); i++) {
+                    if (fs::exists(g_lastAction.destPaths[i])) {
+                        fs::rename(g_lastAction.destPaths[i], g_lastAction.movedPaths[i]);
+                        restoredCount++;
+                    }
+                }
+                if (restoredCount > 0) {
+                    statusMessage = std::string(TEXT_MSG_UNDONE) + "moved " + std::to_string(restoredCount) + " item(s)";
+                    g_lastAction = {UNDO_NONE, "", "", "", false, {}, {}};
+                    return true;
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
+    } catch (...) {
+        statusMessage = TEXT_MSG_UNDO_FAILED;
+        return false;
+    }
+
+    statusMessage = TEXT_MSG_UNDO_FAILED;
+    return false;
+}
+
+// Cloud sync functions
+void syncToCloud(bool background = true) {
+    if (!ENABLE_CLOUD_SYNC) return;
+
+    // Build rclone sync command
+    // Using 'rclone copy' to copy local files to cloud (safer than sync)
+    // Alternative: use 'rclone sync' for two-way sync (deletes files on cloud that don't exist locally)
+    std::string cmd = "rclone copy \"" + BASE_DIR + "\" \"" + RCLONE_REMOTE + ":" + RCLONE_PATH +
+                      "\" --quiet --exclude '.git/**'";
+
+    if (background) {
+        cmd += " &"; // Run in background
+    }
+
+    system(cmd.c_str());
+}
+
+void syncFromCloud() {
+    if (!ENABLE_CLOUD_SYNC) return;
+
+    // Download changes from cloud to local
+    std::string cmd = "rclone copy \"" + RCLONE_REMOTE + ":" + RCLONE_PATH + "\" \"" + BASE_DIR +
+                      "\" --quiet --exclude '.git/**'";
+
+    system(cmd.c_str());
+}
+
+void bidirectionalSync() {
+    if (!ENABLE_CLOUD_SYNC) return;
+
+    // Two-way sync (be careful - this can delete files)
+    std::string cmd = "rclone sync \"" + BASE_DIR + "\" \"" + RCLONE_REMOTE + ":" + RCLONE_PATH +
+                      "\" --quiet --exclude '.git/**' &";
+
+    system(cmd.c_str());
+}
+
+// Function to draw a separator line across the full width of the screen
+void drawSeparator(int y) {
+    mvprintw(y, 0, "");
+    for (int i = 0; i < COLS; i++) {
+        addch('-');
+    }
+}
+
 // Function to draw the UI
 void drawUI(const std::vector<std::string>& files, int selectedIndex, int currentPage, const std::string& message = "") {
     clear();
@@ -144,8 +378,14 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
     mvprintw(0, 0, TEXT_HEADER);
 
     // Display status on the right side of the same line
-    std::string statusText = message.empty() ? TEXT_MSG_IDLE : message;
-    std::string statusDisplay = std::string("Status: ") + statusText;
+    std::string statusText;
+    if (!g_selectedPaths.empty()) {
+        // Show selection count when items are selected
+        statusText = std::to_string(g_selectedPaths.size()) + TEXT_MSG_ITEMS_SELECTED;
+    } else {
+        statusText = message.empty() ? TEXT_MSG_IDLE : message;
+    }
+    std::string statusDisplay = std::string(TEXT_STATUS_PREFIX) + statusText;
     int statusX = COLS - statusDisplay.length() - 2; // 2 chars padding from right edge
     if (statusX < strlen(TEXT_HEADER) + 5) { // Ensure it doesn't overlap with header
         statusX = strlen(TEXT_HEADER) + 5;
@@ -175,7 +415,7 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
         mvprintw(1, pageX, "%s", pageIndicator);
     }
 
-    mvprintw(2, 0, TEXT_SEPARATOR);
+    drawSeparator(2);
 
     int startY = TOP_OFFSET;
 
@@ -199,17 +439,34 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
 
             // Only draw if within column limit
             if (col < MAX_COLUMNS) {
+                std::string displayName = files[i];
+                std::string fullPath = getFullPath(displayName);
+                bool isSelected = isPathSelected(fullPath);
+
+                // Add '|' marker for all selected items
+                std::string prefix = isSelected ? "| " : "  ";
+
+                // Highlight current cursor
                 if (i == selectedIndex) {
-                    attron(A_REVERSE); // Highlight selected file
+                    attron(A_REVERSE);
                 }
 
                 // Truncate filename if too long for column
-                std::string displayName = files[i];
-                if (displayName.length() > COLUMN_WIDTH - 4) {
-                    displayName = displayName.substr(0, COLUMN_WIDTH - 7) + "...";
+                int maxWidth = COLUMN_WIDTH - 4;
+                if ((int)displayName.length() > maxWidth) {
+                    displayName = displayName.substr(0, maxWidth - 3) + "...";
                 }
 
-                mvprintw(yPos, xPos, "%s", displayName.c_str());
+                // If item is selected but not the cursor, make it bold
+                if (isSelected && i != selectedIndex) {
+                    attron(A_BOLD);
+                }
+
+                mvprintw(yPos, xPos, "%s%s", prefix.c_str(), displayName.c_str());
+
+                if (isSelected && i != selectedIndex) {
+                    attroff(A_BOLD);
+                }
 
                 if (i == selectedIndex) {
                     attroff(A_REVERSE);
@@ -220,30 +477,33 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
 
     // Draw footer with instructions
     int footerY = LINES - 5;
-    mvprintw(footerY, 0, TEXT_SEPARATOR);
+    drawSeparator(footerY);
     mvprintw(footerY + 1, 0, TEXT_CONTROLS);
 
     if (currentPath == BASE_DIR) {
-        mvprintw(footerY + 2, 0, "  %s | %s | %c: %s | %c: %s | %c: %s | %s/%c: %s | %c: %s | %c: %s",
+        mvprintw(footerY + 2, 0, "  %s | %s | %c: %s | %c: %s | %c: %s | %s/%c: %s | %c: %s | %c: %s | %c: %s | %c: %s",
                  TEXT_ARROWS, TEXT_ENTER, KEY_NEW_FILE, TEXT_NEW_FILE_LABEL,
                  KEY_NEW_FOLDER, TEXT_NEW_FOLDER_LABEL, KEY_RENAME, TEXT_RENAME_LABEL,
                  TEXT_DELETE_KEY_LABEL, KEY_DELETE_ALT, TEXT_DELETE_LABEL,
-                 KEY_CONVERT, TEXT_CONVERT_LABEL, KEY_QUIT, TEXT_QUIT_LABEL);
+                 KEY_CONVERT, TEXT_CONVERT_LABEL, KEY_SELECT_MODE, TEXT_SELECT_LABEL,
+                 KEY_UNDO_ACTION, TEXT_UNDO_LABEL, KEY_QUIT, TEXT_QUIT_LABEL);
     } else {
-        mvprintw(footerY + 2, 0, "  %s | %s | %c: %s | %c: %s | %c: %s | %c: %s | %s/%c: %s | %c: %s | %c: %s",
+        mvprintw(footerY + 2, 0, "  %s | %s | %c: %s | %c: %s | %c: %s | %c: %s | %s/%c: %s | %c: %s | %c: %s | %c: %s | %c: %s",
                  TEXT_ARROWS, TEXT_ENTER, KEY_BACK, TEXT_BACK_LABEL,
                  KEY_NEW_FILE, TEXT_NEW_FILE_LABEL, KEY_NEW_FOLDER, TEXT_NEW_FOLDER_LABEL,
                  KEY_RENAME, TEXT_RENAME_LABEL, TEXT_DELETE_KEY_LABEL, KEY_DELETE_ALT, TEXT_DELETE_LABEL,
-                 KEY_CONVERT, TEXT_CONVERT_LABEL, KEY_QUIT, TEXT_QUIT_LABEL);
+                 KEY_CONVERT, TEXT_CONVERT_LABEL, KEY_SELECT_MODE, TEXT_SELECT_LABEL,
+                 KEY_UNDO_ACTION, TEXT_UNDO_LABEL, KEY_QUIT, TEXT_QUIT_LABEL);
     }
-
 
     refresh();
 }
 
 // Function to get user input (string) with cancel support
 std::string getUserInput(const std::string& prompt) {
-    int y = LINES - 7;
+    int y = LINES - 5; // Separator line position (above Controls)
+
+    // Replace separator line with the prompt
     mvprintw(y, 0, "%s", prompt.c_str());
     clrtoeol();
     refresh();
@@ -268,7 +528,7 @@ std::string getUserInput(const std::string& prompt) {
             // Handle backspace only (not forward delete)
             if (!input.empty()) {
                 input.pop_back();
-                // Redraw the input line
+                // Redraw the input line with prompt
                 mvprintw(y, 0, "%s", prompt.c_str());
                 clrtoeol();
                 if (!input.empty()) {
@@ -298,7 +558,7 @@ int selectTemplate(const std::vector<std::string>& templates) {
     while (selecting) {
         clear();
         mvprintw(1, 0, TEXT_PROMPT_SELECT_TEMPLATE);
-        mvprintw(2, 0, TEXT_SEPARATOR);
+        drawSeparator(2);
 
         // Display templates
         for (size_t i = 0; i < templates.size(); i++) {
@@ -311,8 +571,8 @@ int selectTemplate(const std::vector<std::string>& templates) {
             }
         }
 
-        mvprintw(3 + templates.size() + 1, 0, TEXT_SEPARATOR);
-        mvprintw(3 + templates.size() + 2, 0, "Use arrow keys to navigate, ENTER to select, ESC to cancel");
+        drawSeparator(3 + templates.size() + 1);
+        mvprintw(3 + templates.size() + 2, 0, TEXT_PROMPT_TEMPLATE_NAV);
 
         refresh();
 
@@ -342,15 +602,18 @@ int selectTemplate(const std::vector<std::string>& templates) {
 // Function to create file with template
 void createFileWithTemplate(const std::string& filename, const std::string& templateName) {
     std::string filepath = currentPath + "/" + filename;
-    std::ofstream outFile(filepath);
 
-    if (!outFile.is_open()) {
+    // Create and open file with explicit flags
+    std::ofstream outFile(filepath, std::ios::out | std::ios::trunc);
+
+    if (!outFile.is_open() || !outFile.good()) {
+        // File creation failed
         return;
     }
 
-    if (templateName == "Blank") {
-        // Create empty file
-        outFile << "";
+    if (templateName == TEXT_MSG_BLANK_LABEL) {
+        // Create empty file - write nothing, just open and close
+        // No content needed for blank file
     } else {
         // Find and copy template content
         // Convert display name back to filename
@@ -379,6 +642,8 @@ void createFileWithTemplate(const std::string& filename, const std::string& temp
         }
     }
 
+    // Explicitly flush and close
+    outFile.flush();
     outFile.close();
 }
 
@@ -397,10 +662,10 @@ bool fileExists(const std::string& name) {
 // Function to delete a file or folder
 void deleteFile(const std::string& filename) {
     std::string filepath = currentPath + "/" + filename;
-    // Remove [DIR] prefix if present
+    // Remove [] prefix if present
     std::string actualName = filename;
-    if (filename.substr(0, 6) == "[DIR] ") {
-        actualName = filename.substr(6);
+    if (filename.substr(0, 2) == TEXT_FOLDER_LABEL) {
+        actualName = filename.substr(2);
         filepath = currentPath + "/" + actualName;
     }
     fs::remove_all(filepath); // remove_all handles both files and directories
@@ -408,10 +673,10 @@ void deleteFile(const std::string& filename) {
 
 // Function to rename a file or folder
 void renameFile(const std::string& oldName, const std::string& newName) {
-    // Remove [DIR] prefix if present
+    // Remove [] prefix if present
     std::string actualOldName = oldName;
-    if (oldName.substr(0, 6) == "[DIR] ") {
-        actualOldName = oldName.substr(6);
+    if (oldName.substr(0, 2) == TEXT_FOLDER_LABEL) {
+        actualOldName = oldName.substr(2);
     }
 
     std::string oldPath = currentPath + "/" + actualOldName;
@@ -422,7 +687,7 @@ void renameFile(const std::string& oldName, const std::string& newName) {
 // Function to open a file in micro editor
 void openFileInEditor(const std::string& filename) {
     // Don't try to edit directories
-    if (filename.substr(0, 6) == "[DIR] ") {
+    if (filename.substr(0, 2) == TEXT_FOLDER_LABEL) {
         return;
     }
 
@@ -443,10 +708,10 @@ void openFileInEditor(const std::string& filename) {
 
 // Function to convert text file to MLA-formatted DOCX
 void convertMarkdownToDocx(const std::string& filename, std::string& statusMessage) {
-    // Remove [DIR] prefix if somehow present
+    // Remove [] prefix if somehow present
     std::string actualFilename = filename;
-    if (filename.substr(0, 6) == "[DIR] ") {
-        statusMessage = "Cannot convert a directory";
+    if (filename.substr(0, 2) == TEXT_FOLDER_LABEL) {
+        statusMessage = TEXT_MSG_CANNOT_CONVERT_DIR;
         return;
     }
 
@@ -458,7 +723,7 @@ void convertMarkdownToDocx(const std::string& filename, std::string& statusMessa
     }
 
     if (ext != ".md" && ext != ".txt") {
-        statusMessage = "File must be .md or .txt format";
+        statusMessage = TEXT_MSG_FILE_MUST_BE_MD_TXT;
         return;
     }
 
@@ -466,7 +731,7 @@ void convertMarkdownToDocx(const std::string& filename, std::string& statusMessa
     std::string outputFile = filepath.substr(0, filepath.length() - ext.length()) + ".docx";
 
     // Show converting message
-    mvprintw(LINES - 7, 0, "Converting to Word document with MLA formatting...");
+    mvprintw(LINES - 7, 0, TEXT_MSG_CONVERTING);
     clrtoeol();
     refresh();
 
@@ -488,15 +753,20 @@ void convertMarkdownToDocx(const std::string& filename, std::string& statusMessa
 
     if (result == 0) {
         std::string outputFilename = outputFile.substr(currentPath.length() + 1);
-        statusMessage = "Converted to: " + outputFilename + " (MLA formatting applied)";
+        statusMessage = std::string(TEXT_MSG_CONVERTED_TO) + outputFilename + TEXT_MSG_MLA_APPLIED;
     } else {
-        statusMessage = "Conversion failed - check /tmp/mla_convert.log (Ensure python-docx is installed)";
+        statusMessage = TEXT_MSG_CONVERSION_FAILED;
     }
 }
 
 int main() {
     // Ensure files and templates directories exist
     ensureDirectories();
+
+    // Sync from cloud on startup (download any changes)
+    if (ENABLE_CLOUD_SYNC) {
+        syncFromCloud();
+    }
 
     // Initialize ncurses
     initscr();
@@ -549,13 +819,59 @@ int main() {
         switch(ch) {
             case KEY_UP:
                 if (selectedIndex > 0) {
+                    // Store the item we're leaving BEFORE moving
+                    std::string prevPath = !files.empty() ? getFullPath(files[selectedIndex]) : "";
+
                     selectedIndex--;
+
+                    // If in selection mode, update selections based on direction from anchor
+                    if (g_selectMode && !files.empty() && g_anchorIndex >= 0) {
+                        std::string fullPath = getFullPath(files[selectedIndex]);
+
+                        if (selectedIndex < g_anchorIndex) {
+                            // Moving up from anchor - select this item
+                            g_selectedPaths.insert(fullPath);
+                        } else if (selectedIndex > g_anchorIndex) {
+                            // Moving back up toward anchor from below - deselect the item we just LEFT
+                            if (prevPath != g_anchorPath && !prevPath.empty()) {
+                                g_selectedPaths.erase(prevPath);
+                            }
+                        } else if (selectedIndex == g_anchorIndex) {
+                            // Landed exactly on anchor - deselect the item we left
+                            if (prevPath != g_anchorPath && !prevPath.empty()) {
+                                g_selectedPaths.erase(prevPath);
+                            }
+                        }
+                    }
                 }
                 break;
 
             case KEY_DOWN:
                 if (!files.empty() && selectedIndex < files.size() - 1) {
+                    // Store the item we're leaving BEFORE moving
+                    std::string prevPath = getFullPath(files[selectedIndex]);
+
                     selectedIndex++;
+
+                    // If in selection mode, update selections based on direction from anchor
+                    if (g_selectMode && !files.empty() && g_anchorIndex >= 0) {
+                        std::string fullPath = getFullPath(files[selectedIndex]);
+
+                        if (selectedIndex > g_anchorIndex) {
+                            // Moving down from anchor - select this item
+                            g_selectedPaths.insert(fullPath);
+                        } else if (selectedIndex < g_anchorIndex) {
+                            // Moving back down toward anchor from above - deselect the item we just LEFT
+                            if (prevPath != g_anchorPath && !prevPath.empty()) {
+                                g_selectedPaths.erase(prevPath);
+                            }
+                        } else if (selectedIndex == g_anchorIndex) {
+                            // Landed exactly on anchor - deselect the item we left
+                            if (prevPath != g_anchorPath && !prevPath.empty()) {
+                                g_selectedPaths.erase(prevPath);
+                            }
+                        }
+                    }
                 }
                 break;
 
@@ -586,6 +902,15 @@ int main() {
                     }
 
                     selectedIndex = targetIndex;
+                } else if (selectedIndex == 0 && currentPage == 0 && currentPath != BASE_DIR) {
+                    // At first item on first page in a subfolder - go back to parent directory
+                    size_t lastSlash = currentPath.find_last_of('/');
+                    if (lastSlash != std::string::npos) {
+                        currentPath = currentPath.substr(0, lastSlash);
+                        selectedIndex = 0;
+                        currentPage = 0;
+                        statusMessage = TEXT_MSG_RETURNED;
+                    }
                 }
                 break;
             }
@@ -630,8 +955,8 @@ int main() {
                 if (!files.empty()) {
                     std::string selected = files[selectedIndex];
                     // Check if it's a directory
-                    if (selected.substr(0, 6) == "[DIR] ") {
-                        std::string folderName = selected.substr(6);
+                    if (selected.substr(0, 2) == TEXT_FOLDER_LABEL) {
+                        std::string folderName = selected.substr(2);
                         currentPath = currentPath + "/" + folderName;
                         selectedIndex = 0; // Reset selection when entering folder
                         currentPage = 0; // Reset page when entering folder
@@ -649,11 +974,13 @@ int main() {
 
                             reset_prog_mode();
                             refresh();
-                            statusMessage = "Opened: " + selected;
+                            statusMessage = std::string(TEXT_MSG_OPENED) + selected;
                         } else {
                             // Open other files in micro editor
                             openFileInEditor(selected);
                             statusMessage = std::string(TEXT_MSG_EDITED_FILE) + selected;
+                            // Sync to cloud after editing file
+                            syncToCloud();
                         }
                     }
                 }
@@ -702,7 +1029,11 @@ int main() {
                         } else {
                             // Create file with selected template
                             createFileWithTemplate(filename, templates[templateIndex]);
+                            // Record undo action
+                            g_lastAction = {UNDO_CREATE_FILE, currentPath + "/" + filename, "", "", false, {}, {}};
                             statusMessage = std::string(TEXT_MSG_CREATED_FILE) + filename;
+                            // Sync to cloud after creating file
+                            syncToCloud();
                         }
                     }
                 } else {
@@ -719,7 +1050,11 @@ int main() {
                         statusMessage = TEXT_MSG_ALREADY_EXISTS;
                     } else {
                         createFolder(foldername);
+                        // Record undo action
+                        g_lastAction = {UNDO_CREATE_FOLDER, currentPath + "/" + foldername, "", "", false, {}, {}};
                         statusMessage = std::string(TEXT_MSG_CREATED_FOLDER) + foldername;
+                        // Sync to cloud after creating folder
+                        syncToCloud();
                     }
                 } else {
                     statusMessage = TEXT_MSG_USER_CANCELLED;
@@ -735,8 +1070,20 @@ int main() {
                     snprintf(prompt, sizeof(prompt), TEXT_PROMPT_RENAME, oldName.c_str());
                     std::string newName = getUserInput(prompt);
                     if (!newName.empty() && newName != oldName) {
+                        // Get the actual old name (remove [] prefix if directory)
+                        std::string actualOldName = oldName;
+                        if (oldName.substr(0, 2) == TEXT_FOLDER_LABEL) {
+                            actualOldName = oldName.substr(2);
+                        }
+                        std::string oldPath = currentPath + "/" + actualOldName;
+                        std::string newPath = currentPath + "/" + newName;
+
                         renameFile(oldName, newName);
+                        // Record undo action
+                        g_lastAction = {UNDO_RENAME, oldPath, newPath, "", false, {}, {}};
                         statusMessage = std::string(TEXT_MSG_RENAMED) + oldName + " -> " + newName;
+                        // Sync to cloud after renaming
+                        syncToCloud();
                     } else {
                         statusMessage = TEXT_MSG_RENAME_CANCELLED;
                     }
@@ -750,16 +1097,92 @@ int main() {
             case 383:    // Delete key on macOS/some systems
             case KEY_DELETE_ALT: // 'd' key as alternative
             case KEY_DELETE_ALT - 32: { // Handle uppercase 'D'
-                if (!files.empty()) {
-                    std::string filename = files[selectedIndex];
-                    mvprintw(LINES - 7, 0, TEXT_PROMPT_DELETE_CONFIRM, filename.c_str());
+                // Check if we have selected items to delete
+                if (!g_selectedPaths.empty()) {
+                    // Bulk delete selected items
+                    int itemCount = g_selectedPaths.size();
+                    char deletePrompt[100];
+                    snprintf(deletePrompt, sizeof(deletePrompt), "scrap %d item(s)? (y/n): ", itemCount);
+
+                    mvprintw(LINES - 5, 0, "%s", deletePrompt);
                     clrtoeol();
                     refresh();
 
                     int confirm = getch();
-                    if (confirm == 'y' || confirm == 'Y') {
+                    // Accept 'y', 'Y', or Enter as confirmation
+                    if (confirm == 'y' || confirm == 'Y' || confirm == '\n' || confirm == KEY_ENTER || confirm == 10) {
+                        int deletedCount = 0;
+                        int failedCount = 0;
+
+                        // Copy selected paths to vector for iteration (avoid modifying set during iteration)
+                        std::vector<std::string> pathsToDelete(g_selectedPaths.begin(), g_selectedPaths.end());
+
+                        for (const auto& fullPath : pathsToDelete) {
+                            try {
+                                if (fs::exists(fullPath)) {
+                                    fs::remove_all(fullPath);
+                                    deletedCount++;
+                                }
+                            } catch (...) {
+                                failedCount++;
+                            }
+                        }
+
+                        // Clear selection after deletion
+                        g_selectedPaths.clear();
+                        g_selectMode = false;
+                        g_anchorIndex = -1;
+
+                        // Build status message
+                        statusMessage = "Scrapped " + std::to_string(deletedCount) + " item(s)";
+                        if (failedCount > 0) {
+                            statusMessage += " (" + std::to_string(failedCount) + " failed)";
+                        }
+
+                        // Sync to cloud after bulk deletion
+                        syncToCloud();
+                    } else {
+                        statusMessage = TEXT_MSG_DELETE_CANCELLED;
+                    }
+                } else if (!files.empty()) {
+                    // Single item delete (no selection)
+                    std::string filename = files[selectedIndex];
+                    // Replace separator line with delete prompt
+                    mvprintw(LINES - 5, 0, TEXT_PROMPT_DELETE_CONFIRM, filename.c_str());
+                    clrtoeol();
+                    refresh();
+
+                    int confirm = getch();
+                    // Accept 'y', 'Y', or Enter as confirmation
+                    if (confirm == 'y' || confirm == 'Y' || confirm == '\n' || confirm == KEY_ENTER || confirm == 10) {
+                        // Get actual filename (remove [] prefix if directory)
+                        std::string actualName = filename;
+                        bool isDir = false;
+                        if (filename.substr(0, 2) == TEXT_FOLDER_LABEL) {
+                            actualName = filename.substr(2);
+                            isDir = true;
+                        }
+                        std::string fullPath = currentPath + "/" + actualName;
+
+                        // Save content if it's a file (for undo)
+                        std::string content = "";
+                        if (!isDir && fs::exists(fullPath)) {
+                            std::ifstream inFile(fullPath);
+                            if (inFile.is_open()) {
+                                std::string line;
+                                while (std::getline(inFile, line)) {
+                                    content += line + "\n";
+                                }
+                                inFile.close();
+                            }
+                        }
+
                         deleteFile(filename);
+                        // Record undo action
+                        g_lastAction = {UNDO_DELETE, fullPath, "", content, isDir, {}, {}};
                         statusMessage = std::string(TEXT_MSG_DELETED) + filename;
+                        // Sync to cloud after deleting
+                        syncToCloud();
                         if (selectedIndex >= files.size() - 1 && selectedIndex > 0) {
                             selectedIndex--;
                         }
@@ -777,7 +1200,7 @@ int main() {
                 if (!files.empty()) {
                     convertMarkdownToDocx(files[selectedIndex], statusMessage);
                 } else {
-                    statusMessage = "No file selected for conversion";
+                    statusMessage = TEXT_MSG_NO_FILE_FOR_CONVERSION;
                 }
                 break;
             }
@@ -786,6 +1209,122 @@ int main() {
             case KEY_QUIT - 32: // Handle uppercase
                 running = false;
                 break;
+
+            // 's' or 'S' - toggle selection mode
+            case 's':
+            case 'S': {
+                if (!files.empty()) {
+                    std::string fullPath = getFullPath(files[selectedIndex]);
+
+                    if (!g_selectMode) {
+                        // Turn ON selection mode
+                        g_selectMode = true;
+                        g_anchorIndex = selectedIndex;
+                        g_anchorPath = fullPath;
+
+                        // Select the current item
+                        g_selectedPaths.insert(fullPath);
+
+                        statusMessage = TEXT_MSG_SELECTION_MODE_ON;
+                    } else {
+                        // Turn OFF selection mode (lock in selections)
+                        g_selectMode = false;
+                        g_anchorIndex = -1;
+                        g_anchorPath = "";
+
+                        statusMessage = std::string(TEXT_MSG_SELECTION_LOCKED) + std::to_string(g_selectedPaths.size()) + " item(s))";
+                    }
+                }
+                break;
+            }
+
+            case 27: // ESC key -> cancel selection
+                if (!g_selectedPaths.empty() || g_selectMode) {
+                    g_selectedPaths.clear();
+                    g_selectMode = false;
+                    g_anchorIndex = -1;
+                    g_anchorPath = "";
+                    statusMessage = TEXT_MSG_SELECTION_CANCELLED;
+                }
+                break;
+
+            case 'v':
+            case 'V': {
+                // Move selected items to current directory
+                if (!g_selectedPaths.empty()) {
+                    int moveCount = 0;
+                    int errorCount = 0;
+                    std::vector<std::string> pathsToMove(g_selectedPaths.begin(), g_selectedPaths.end());
+                    std::vector<std::string> movedSources;
+                    std::vector<std::string> movedDests;
+
+                    for (const std::string& sourcePath : pathsToMove) {
+                        try {
+                            // Extract filename from source path
+                            size_t lastSlash = sourcePath.find_last_of('/');
+                            std::string filename = (lastSlash != std::string::npos)
+                                ? sourcePath.substr(lastSlash + 1)
+                                : sourcePath;
+
+                            // Don't move if source and destination are the same
+                            std::string destPath = currentPath + "/" + filename;
+                            if (sourcePath == destPath) {
+                                continue; // Skip items already in target folder
+                            }
+
+                            // Check if destination already exists
+                            if (fs::exists(destPath)) {
+                                errorCount++;
+                                continue;
+                            }
+
+                            // Move the file/folder
+                            fs::rename(sourcePath, destPath);
+                            moveCount++;
+
+                            // Track for undo
+                            movedSources.push_back(sourcePath);
+                            movedDests.push_back(destPath);
+
+                            // Remove from selection after successful move
+                            g_selectedPaths.erase(sourcePath);
+                        } catch (...) {
+                            errorCount++;
+                        }
+                    }
+
+                    if (moveCount > 0) {
+                        // Record undo action
+                        g_lastAction = {UNDO_MOVE, "", "", "", false, movedSources, movedDests};
+                        statusMessage = std::string(TEXT_MSG_MOVED_ITEMS) + std::to_string(moveCount) + " item(s)";
+                        // Sync to cloud after moving items
+                        syncToCloud();
+                        if (errorCount > 0) {
+                            statusMessage += " (" + std::to_string(errorCount) + TEXT_MSG_MOVE_FAILED;
+                        }
+                    } else if (errorCount > 0) {
+                        statusMessage = TEXT_MSG_MOVE_ERROR;
+                    } else {
+                        statusMessage = TEXT_MSG_NO_ITEMS_MOVE;
+                    }
+
+                    // Clear selection if all items were moved
+                    if (g_selectedPaths.empty()) {
+                        g_selectMode = false;
+                        g_anchorIndex = -1;
+                        g_anchorPath = "";
+                    }
+                } else {
+                    statusMessage = TEXT_MSG_NO_ITEMS_TO_MOVE;
+                }
+                break;
+            }
+
+            case KEY_UNDO_ACTION:
+            case KEY_UNDO_ACTION - 32: { // Handle uppercase 'Z'
+                performUndo(statusMessage);
+                break;
+            }
         }
     }
 
