@@ -1,366 +1,197 @@
-# File Manager with Automated MLA Formatting
+# Typewriter
 
-A terminal-based file manager with built-in MLA essay formatting. Create, edit, and manage files with automatic MLA formatting conversion to Word documents.
-
-## ☁️ Cloud Storage Support
-
-Automatically sync your files to Google Drive, Dropbox, OneDrive, and 40+ other cloud providers using rclone.
-
-### Features
-- 🔄 Auto-sync after create/edit/delete operations
-- 🌐 Works offline (syncs when connection returns)
-- 📱 Access files across all your devices
-- 🔒 Supports encryption
-- 🚀 Background sync (non-blocking)
-
-### Quick Setup
-
-**1. Install rclone:**
-```bash
-# macOS
-brew install rclone
-
-# Linux/Raspberry Pi
-curl https://rclone.org/install.sh | sudo bash
-```
-
-**2. Configure your cloud provider:**
-```bash
-rclone config
-```
-Follow the prompts to connect Google Drive, Dropbox, OneDrive, etc. Give your remote a name (e.g., "gdrive" or "mycloud").
-
-**3. Enable in code:**
-
-Edit `main.cpp` (around line 26) and update:
-```cpp
-const bool ENABLE_CLOUD_SYNC = true;  // Change from false to true
-const std::string RCLONE_REMOTE = "gdrive";  // Your remote name from step 2
-const std::string RCLONE_PATH = "typewriter/files";  // Folder path on cloud
-```
-
-**4. Rebuild and run:**
-```bash
-./build_and_run.sh
-```
-
-That's it! Your files now automatically sync to the cloud.
-
-### Supported Cloud Providers
-- Google Drive (15GB free)
-- Dropbox (2GB free)
-- Microsoft OneDrive (5GB free)
-- Amazon S3
-- Box (10GB free)
-- pCloud
-- Mega (20GB free)
-- iCloud Drive
-- NextCloud (self-hosted)
-- And 40+ more!
-
-### Manual Sync Commands
-
-```bash
-# Check configured remotes
-rclone listremotes
-
-# Upload to cloud
-rclone copy files/ mycloud:typewriter/files/
-
-# Download from cloud
-rclone copy mycloud:typewriter/files/ files/
-
-# View files on cloud
-rclone ls mycloud:typewriter/files/
-
-# Test connection
-rclone lsd mycloud:
-```
-
-### Alternative: Mount Cloud Storage
-
-Instead of automatic sync, you can mount cloud storage as a local folder:
-
-```bash
-# Create mount point
-mkdir ~/cloud
-
-# Mount (replace 'mycloud' with your remote name)
-rclone mount mycloud: ~/cloud --daemon --vfs-cache-mode writes
-
-# Update main.cpp to use mounted path
-const bool ENABLE_CLOUD_SYNC = false;  // Not needed with mount
-const std::string BASE_DIR = "/home/username/cloud/typewriter/files";
-```
-
-This provides real-time sync but requires an internet connection.
-
-### Cloud Sync Workflow Examples
-
-**Multi-Device Usage:**
-1. Write on Computer 1 → Auto-syncs to cloud
-2. Open app on Computer 2 → Downloads from cloud on startup
-3. Edit on Computer 2 → Auto-syncs back
-4. Access via phone → Open files in Google Drive/Dropbox app
-5. Everything stays in sync! ☁️
-
-**Raspberry Pi Cloud Setup:**
-```bash
-# Install everything
-./setup_pi.sh
-
-# Edit main.cpp to enable sync
-const bool ENABLE_CLOUD_SYNC = true;
-const std::string RCLONE_REMOTE = "gdrive";
-
-# Rebuild
-./build_and_run.sh
-
-# Your Pi now syncs to cloud automatically!
-```
-
-**Auto-start on Boot (Raspberry Pi):**
-```bash
-sudo nano /etc/systemd/system/typewriter.service
-```
-
-Add:
-```ini
-[Unit]
-Description=Typewriter App
-After=network.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/typewriter
-ExecStart=/home/pi/typewriter/typewriter
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable:
-```bash
-sudo systemctl enable typewriter.service
-sudo systemctl start typewriter.service
-```
+A terminal-based file manager with MLA essay formatting, smart notes, and cloud sync support.
 
 ## Installation
 
-### Raspberry Pi Setup
-
-Quick setup with the automated script:
-
+Run the installer:
 ```bash
-./setup_pi.sh
+./install.sh
 ```
 
-This installs dependencies, sets up rclone (optional), and configures auto-start on boot.
+The installer will:
+- Detect your OS and package manager
+- Install all required dependencies
+- Build the application
+- Set up spellchecker
+- Install to `~/.typewriter`
 
-Or run the rclone setup separately:
+## Quick Start
+
+After installation, run:
 ```bash
-./setup_rclone.sh  # Interactive rclone configuration wizard
+~/.typewriter/typewriter
+# or simply:
+typewriter
 ```
 
-### Manual Installation
+## Controls
 
-#### Required Dependencies
-
-Install all required dependencies:
-
-```bash
-# For macOS:
-brew install ncurses
-brew install micro
-pip3 install python-docx
-
-# For Linux/Raspberry Pi:
-sudo apt update
-sudo apt install build-essential cmake libncurses5-dev libncursesw5-dev micro
-pip3 install python-docx
-
-# Optional: Install rclone for cloud sync
-curl https://rclone.org/install.sh | sudo bash
-```
-
-## Compilation
-
-Compile the program:
-
-```bash
-g++ -std=c++17 main.cpp -o filemanager -lncurses
-```
-
-Or use the build script (compiles and runs):
-
-```bash
-chmod +x build_and_run.sh
-./build_and_run.sh
-```
-
-## Running
-
-```bash
-./filemanager
-```
-
-## File Manager Controls
-
+### File Manager
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Navigate files |
-| `←` / `→` | Navigate columns/pages |
-| `ENTER` | Open file/folder |
-| `n` | Create new file |
+| `↑↓←→` | Navigate files |
+| `Enter` | Open file/folder |
+| `Backspace` | Go up one folder |
+| `n` | Create new note |
 | `f` | Create new folder |
 | `r` | Rename file/folder |
-| `DEL` or `d` | Delete file/folder |
-| `c` | Convert to Word (MLA format) |
-| `b` | Go back to parent folder |
+| `d` | Delete file/folder |
+| `c` | Convert to MLA format |
+| `s` | Selection mode (multi-select) |
+| `u` | Undo last action |
+| `t` | Settings menu |
 | `q` | Quit |
 
-## Micro Editor Controls
-
-When editing files in micro:
-
+### Editor (Micro)
 | Key | Action |
 |-----|--------|
-| `Ctrl-S` | Save file |
-| `Ctrl-Q` | Quit micro |
-| `Ctrl-G` | Open help menu |
-| `Ctrl-F` | Find text |
-| `Ctrl-C` | Copy |
-| `Ctrl-X` | Cut |
-| `Ctrl-V` | Paste |
-| `Ctrl-Z` | Undo |
-| `Ctrl-Y` | Redo |
-| `Ctrl-A` | Select all |
-| `Ctrl-E` | Command mode |
+| `Ctrl+S` | Save |
+| `Ctrl+Q` | Quit |
+| `Ctrl+F` | Find |
+| `Ctrl+H` | Find and replace |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
 
-## Creating an MLA Essay
+Spellcheck is configured via aspell. The installer creates the config file at `~/.config/micro/settings.json` with aspell enabled.
 
-1. **Create file**: Press `n`, enter filename (extension `.txt` added automatically for MLA)
-2. **Select template**: Choose "Mla Format"
-3. **Edit in micro**:
-   - Line 1: Your full name (e.g., "John Doe")
-   - Line 3: Instructor's name
-   - Line 5: Course title
-   - Line 7: Date (format: Day Month Year, e.g., "10 January 2026")
-   - Line 9: Your essay title
-   - Line 11+: Write your essay content
-4. **Save & quit**: `Ctrl-S` then `Ctrl-Q`
-5. **Convert**: Press `c` on your `.txt` file
-6. **Open**: Press `ENTER` on the `.docx` file - fully formatted and ready to submit!
-
-## Automatic MLA Formatting
-
-When you convert a file with `c`, the system automatically applies:
-
-- ✅ Header with last name + page number (upper right on every page)
-- ✅ Student info block (name, instructor, course, date) - upper left
-- ✅ Title centered
-- ✅ Times New Roman 12pt font throughout
-- ✅ Double spacing (2.0)
-- ✅ 1-inch margins on all sides
-- ✅ Body paragraphs indented 0.5 inches
-- ✅ Works Cited centered and bold
-- ✅ Citations with hanging indent
-
-**No manual formatting required in Word!**
-
-## Project Structure
-
-```
-typewriter/
-├── main.cpp              # Main program source
-├── filemanager           # Compiled executable
-├── build_and_run.sh      # Build and run script
-├── README.md             # This file
-├── templates/
-│   ├── mla_format.txt    # MLA essay template
-│   └── convert_to_mla.py # Python conversion script
-└── files/                # Your documents (auto-created)
-```
+### Settings Menu (Press 't')
+1. View Remotes - List configured cloud storage
+2. Sync Status - Test connection and view settings
+3. Switch Remote - Change cloud storage provider
+4. Toggle Cloud Sync - Enable/disable sync
+5. Toggle Auto Sync - Auto vs manual sync
+6. Sync Now - Manually sync files
+7. Setup New Remote - Configure cloud storage
+8. Test Connection - Verify remote connection
+9. Change Sync Type - Full sync or one-way
 
 ## Features
 
-- **Cloud sync support** with rclone (Google Drive, Dropbox, OneDrive, etc.)
-- **Multi-column view** with pagination (up to 3 columns per page)
-- **Template system** for easy document creation
-- **Automatic .txt extension** for MLA essays
-- **Direct .docx opening** in Word/Pages
-- **Folder navigation** with breadcrumb display
-- **File operations**: create, rename, delete with confirmation
-- **Selection mode**: select and move multiple files
-- **Undo support**: undo last file operation
-- **Status messages** for all operations
-- **Cancel support** for all input operations (press 'c')
-- **Raspberry Pi ready**: lightweight and efficient
+### Smart Notes
+Files with `{S}` prefix are automatically formatted on save:
+- `1. Title` → Section headers
+- `1a. Item` → Bullets under section 1
+- `a. Item` → Bullet in current section
+
+Organized numerically and alphabetically on save.
+
+### MLA Formatting
+Convert any text file to MLA format:
+1. Highlight file
+2. Press `c`
+3. Opens as formatted .docx
+
+### Cloud Sync
+Supports 40+ cloud providers via rclone:
+- Google Drive
+- Dropbox
+- OneDrive
+- And more
+
+### Spellcheck
+The installer configures aspell for spell checking:
+- Config file created at `~/.config/micro/settings.json`
+- Aspell enabled with US English dictionary
+- Command line tool available: `aspell check filename.txt`
+
+## File Organization
+
+### Installation Directory
+```
+~/.typewriter/
+├── main.cpp              # Source code
+├── CMakeLists.txt        # Build config
+├── typewriter            # Launcher script
+├── cmake-build-typewriter/
+│   └── typewriter       # Compiled binary
+├── templates/           # Note templates
+│   ├── smart.txt
+│   ├── mla_format.txt
+│   └── smart_format.py
+└── files/               # Your notes
+```
+
+### File Types
+- Regular files - Plain text
+- `{S}` prefix - Smart notes (auto-formatted)
+- `[]` prefix - Folders
+
+## Templates
+
+### Blank
+Empty note for quick writing.
+
+### MLA
+Pre-formatted for essays with proper headers and spacing.
+
+### Smart
+Auto-organizing notes with sections and bullets.
+
+## Dependencies
+
+Automatically installed by installer:
+- cmake
+- ncurses
+- micro editor
+- Python 3 & python-docx
+- aspell (spellcheck)
+- rclone (cloud sync)
+
+## Platform Support
+
+- Linux (Debian, Ubuntu, Fedora, Arch, openSUSE, Alpine)
+- macOS
+- Raspberry Pi (with auto-start option)
+
+## Updating
+
+Check for and install updates:
+```bash
+./install.sh --update
+```
+
+## Uninstall
+
+```bash
+rm -rf ~/.typewriter
+```
+
+## Tips
+
+- **Multi-select**: Press `s`, use arrows to select multiple files, press `s` again to lock, then `d` to delete all
+- **Undo**: Press `u` to undo the last delete, rename, or move
+- **Smart notes**: Type anywhere in the file, sections and bullets organize on save
+- **Cloud sync**: Enable auto-sync to backup every time you save a file
 
 ## Troubleshooting
 
-### Cloud Sync Issues
-
-**Files not syncing?**
+### Can't run typewriter command
+Add to PATH:
 ```bash
-# Verify cloud sync is enabled
-grep ENABLE_CLOUD_SYNC main.cpp  # Should show: true
-
-# Check your remote name
-rclone listremotes
-
-# Test connection
-rclone lsd "your-remote-name:"
-
-# Test manual sync
-rclone copy files/ "your-remote-name:typewriter/files/" -v
+echo 'export PATH="$HOME/.typewriter:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-**Remote name has spaces?**
-
-If your remote is named "Google Drive" (with space), make sure you're using quotes in commands:
+### Build fails
+Check dependencies:
 ```bash
-rclone ls "Google Drive:typewriter/files/"
+cmake --version
+g++ --version
 ```
 
-The code already handles this automatically.
-
-**Connection errors?**
+Reinstall:
 ```bash
-# Reauthorize your remote
-rclone config reconnect "your-remote-name"
-
-# Or reconfigure from scratch
-rclone config
+./install.sh
 ```
 
-**Need verbose output?**
-
-Edit the sync functions in `main.cpp` and remove `--quiet` flag to see sync activity.
-
-### General Issues
-
-**Build errors?**
-- Make sure ncurses is installed: `brew install ncurses` (macOS) or `sudo apt install libncurses5-dev` (Linux)
-- Use C++17: `g++ -std=c++17 main.cpp -o typewriter -lncurses`
-
-**Micro editor not found?**
-```bash
-# macOS
-brew install micro
-
-# Linux/Raspberry Pi
-sudo apt install micro
-```
-
-**Python conversion not working?**
-```bash
-pip3 install python-docx
-```
+### Cloud sync not working
+Test connection:
+1. Press `t` in app
+2. Select "Test Connection"
+3. Follow fix wizard if issues
 
 ## License
 
-Open source project.
+MIT
 

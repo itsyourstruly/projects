@@ -1,0 +1,4 @@
+remote=Google Drive
+enabled=1
+auto_sync=0
+sync_type=0

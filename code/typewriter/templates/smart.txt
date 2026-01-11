@@ -1,3 +1,9 @@
-1. plato
-1a. euthyphro
-1b. socrates
+1. This is a smart note.
+1a. You can create bullets like this!
+1b. Exit this note by pressing control+q and come back to see how it looks!
+2. If you want to clear this example
+2a. use control+a to select all and delete to clear it out.
+2b. Type "1. New title" to change the title (Must be after the original title is written).
+
+Note that plain text moves to the top.
+This could be useful for taking down quick, potentially important notes and keep them at the top of your list.

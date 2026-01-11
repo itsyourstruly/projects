@@ -1,0 +1,3 @@
+/home/matthewn/Desktop/seaplusplus/projects/code/typewriter/cmake-build-typewriter/CMakeFiles/typewriter.dir
+/home/matthewn/Desktop/seaplusplus/projects/code/typewriter/cmake-build-typewriter/CMakeFiles/edit_cache.dir
+/home/matthewn/Desktop/seaplusplus/projects/code/typewriter/cmake-build-typewriter/CMakeFiles/rebuild_cache.dir

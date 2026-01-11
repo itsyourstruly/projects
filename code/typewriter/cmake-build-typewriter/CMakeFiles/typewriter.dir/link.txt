@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/typewriter.dir/link.d CMakeFiles/typewriter.dir/main.cpp.o -o typewriter  -lcurses /usr/lib64/libform.so
