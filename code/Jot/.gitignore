@@ -1,0 +1,25 @@
+# Build directories
+cmake-build-*/
+build/
+
+# Compiled executable
+jot
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# User files directory (optional, uncomment if you want to exclude)
+# files/
+
+# Lock files
+.typewriter_locks
+.jot_locks
+
