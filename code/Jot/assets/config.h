@@ -32,4 +32,4 @@ extern const int MAX_COLUMNS;
 extern const int TOP_OFFSET;
 extern const int BOTTOM_OFFSET;
 
-#endif // CONFIG_H
+#endif // CONFIG_H// Test change

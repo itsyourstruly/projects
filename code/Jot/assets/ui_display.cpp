@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <cstring>
 
 namespace fs = std::filesystem;
 
@@ -103,10 +104,8 @@ bool performUndo(std::string& statusMessage) {
 }
 
 void drawSeparator(int y) {
-    int width = COLS;
-    for (int x = 0; x < width; x++) {
-        mvprintw(y, x, "-");
-    }
+    // Use hline() for much faster line drawing
+    mvhline(y, 0, '-', COLS);
 }
 
 void drawUI(const std::vector<std::string>& files, int selectedIndex, int currentPage, const std::string& message) {
@@ -115,27 +114,26 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
     // Header
     mvprintw(0, 0, TEXT_HEADER);
 
-    // Status in upper right
-    std::string statusText = std::string(TEXT_STATUS_PREFIX) + message;
+    // Status in upper right - build once and measure
+    const std::string statusText = std::string(TEXT_STATUS_PREFIX) + message;
     mvprintw(0, COLS - statusText.length(), "%s", statusText.c_str());
 
     // Show current path
     if (currentPath == BASE_DIR) {
         mvprintw(1, 0, TEXT_HOME_FOLDER);
     } else {
-        std::string displayPath = currentPath;
-        if (displayPath.substr(0, BASE_DIR.length()) == BASE_DIR) {
-            displayPath = displayPath.substr(BASE_DIR.length() + 1);
-        }
+        const std::string& displayPath = (currentPath.compare(0, BASE_DIR.length(), BASE_DIR) == 0)
+            ? currentPath.substr(BASE_DIR.length() + 1)
+            : currentPath;
         mvprintw(1, 0, TEXT_YOU_ARE_IN, displayPath.c_str());
     }
 
     // Show last modified time for selected item (upper right, below status)
     if (!files.empty() && selectedIndex >= 0 && selectedIndex < files.size()) {
-        std::string fullPath = getFullPath(files[selectedIndex]);
-        std::string timeAgo = getTimeAgo(fullPath);
+        const std::string fullPath = getFullPath(files[selectedIndex]);
+        const std::string timeAgo = getTimeAgo(fullPath);
         if (!timeAgo.empty()) {
-            std::string timeText = "Modified: " + timeAgo;
+            const std::string timeText = "Modified: " + timeAgo;
             mvprintw(1, COLS - timeText.length(), "%s", timeText.c_str());
         }
     }
@@ -143,26 +141,26 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
     drawSeparator(2);
 
     // Calculate pagination
-    int maxFilesPerColumn = LINES - TOP_OFFSET - BOTTOM_OFFSET;
-    int filesPerPage = maxFilesPerColumn * MAX_COLUMNS;
-    int totalPages = files.empty() ? 1 : (files.size() + filesPerPage - 1) / filesPerPage;
-    int startIndex = currentPage * filesPerPage;
-    int endIndex = std::min(startIndex + filesPerPage, (int)files.size());
+    const int maxFilesPerColumn = LINES - TOP_OFFSET - BOTTOM_OFFSET;
+    const int filesPerPage = maxFilesPerColumn * MAX_COLUMNS;
+    const int totalPages = files.empty() ? 1 : (files.size() + filesPerPage - 1) / filesPerPage;
+    const int startIndex = currentPage * filesPerPage;
+    const int endIndex = std::min(startIndex + filesPerPage, static_cast<int>(files.size()));
 
     if (files.empty()) {
         mvprintw(TOP_OFFSET, 2, TEXT_NO_FILES);
     } else {
         // Display files in columns
         for (int i = startIndex; i < endIndex; i++) {
-            int column = (i - startIndex) / maxFilesPerColumn;
-            int row = (i - startIndex) % maxFilesPerColumn;
-            int x = column * COLUMN_WIDTH;
-            int y = TOP_OFFSET + row;
+            const int column = (i - startIndex) / maxFilesPerColumn;
+            const int row = (i - startIndex) % maxFilesPerColumn;
+            const int x = column * COLUMN_WIDTH;
+            const int y = TOP_OFFSET + row;
 
-            std::string displayName = files[i];
-            std::string fullPath = getFullPath(files[i]);
-            bool selected = isPathSelected(fullPath);
-            bool isLocked = isFileLockedByDisplay(files[i]);
+            const std::string& fileRef = files[i];
+            const std::string fullPath = getFullPath(fileRef);
+            const bool selected = isPathSelected(fullPath);
+            const bool isLocked = isFileLockedByDisplay(fileRef);
 
             // Apply selection highlighting
             if (i == selectedIndex) {
@@ -174,16 +172,17 @@ void drawUI(const std::vector<std::string>& files, int selectedIndex, int curren
                 attron(A_BOLD);
             }
 
-            // Truncate if too long
-            if (displayName.length() > COLUMN_WIDTH - 2) {
-                displayName = displayName.substr(0, COLUMN_WIDTH - 5) + "...";
-            }
+            // Prepare display name (truncate if needed)
+            const char* displayPtr = fileRef.c_str();
+            const size_t displayLen = fileRef.length();
 
-            // Show selection marker
-            if (selected) {
-                mvprintw(y, x, "> %s", displayName.c_str());
+            // Show selection marker and file name
+            if (displayLen > COLUMN_WIDTH - 2) {
+                // Need to truncate
+                mvprintw(y, x, "%c %..*s...", selected ? '>' : ' ',
+                        COLUMN_WIDTH - 5, displayPtr);
             } else {
-                mvprintw(y, x, "  %s", displayName.c_str());
+                mvprintw(y, x, "%c %s", selected ? '>' : ' ', displayPtr);
             }
 
             if (isLocked) {
@@ -278,6 +277,11 @@ std::string getUserInput(const std::string& prompt) {
 }
 
 int selectTemplate(const std::vector<std::string>& templates) {
+    // Return -1 if no templates available
+    if (templates.empty()) {
+        return -1;
+    }
+
     int selectedTemplate = 0;
     bool selecting = true;
 
@@ -287,11 +291,11 @@ int selectTemplate(const std::vector<std::string>& templates) {
         drawSeparator(2);
 
         for (size_t i = 0; i < templates.size(); i++) {
-            if (i == selectedTemplate) {
+            if (i == (size_t)selectedTemplate) {
                 attron(A_REVERSE);
             }
             mvprintw(3 + i, 2, "%s", templates[i].c_str());
-            if (i == selectedTemplate) {
+            if (i == (size_t)selectedTemplate) {
                 attroff(A_REVERSE);
             }
         }
@@ -327,8 +331,8 @@ void enterSearchMode(const std::vector<std::string>& allFiles, int& selectedInde
     bool searching = true;
     int selectedResultIndex = 0;
 
-    // Get all files recursively from current directory and subdirectories
-    std::vector<std::string> allFilesRecursive = getAllFilesRecursive(currentPath);
+    // Get all files recursively from current directory and subdirectories (cached)
+    const std::vector<std::string> allFilesRecursive = getAllFilesRecursive(currentPath);
 
     curs_set(1); // Show cursor for typing
 
@@ -336,13 +340,19 @@ void enterSearchMode(const std::vector<std::string>& allFiles, int& selectedInde
         // Filter files based on search query
         matchedFiles.clear();
         if (!searchQuery.empty()) {
-            for (const auto& file : allFilesRecursive) {
-                std::string lowerFile = file;
-                std::string lowerQuery = searchQuery;
+            // Reserve capacity for better performance
+            matchedFiles.reserve(allFilesRecursive.size() / 10);
 
-                // Convert to lowercase for case-insensitive search
-                std::transform(lowerFile.begin(), lowerFile.end(), lowerFile.begin(), ::tolower);
-                std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
+            // Lowercase query once outside loop
+            std::string lowerQuery = searchQuery;
+            std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(),
+                          [](unsigned char c){ return std::tolower(c); });
+
+            for (const auto& file : allFilesRecursive) {
+                // Lowercase file for case-insensitive search
+                std::string lowerFile = file;
+                std::transform(lowerFile.begin(), lowerFile.end(), lowerFile.begin(),
+                              [](unsigned char c){ return std::tolower(c); });
 
                 if (lowerFile.find(lowerQuery) != std::string::npos) {
                     matchedFiles.push_back(file);
@@ -350,7 +360,7 @@ void enterSearchMode(const std::vector<std::string>& allFiles, int& selectedInde
             }
 
             // Keep selectedResultIndex in bounds
-            if (selectedResultIndex >= (int)matchedFiles.size()) {
+            if (selectedResultIndex >= static_cast<int>(matchedFiles.size())) {
                 selectedResultIndex = matchedFiles.size() - 1;
             }
             if (selectedResultIndex < 0 && !matchedFiles.empty()) {
@@ -426,46 +436,43 @@ void enterSearchMode(const std::vector<std::string>& allFiles, int& selectedInde
         // Footer - REPLACE separator with search prompt
         int footerY = LINES - 6;
 
-        // Show best search result (highlighted) before the search prompt
+        // Show search prompt on the left
+        std::string searchPrompt = std::string(TEXT_SEARCH_PROMPT) + searchQuery;
+        mvprintw(footerY, 0, "%s", searchPrompt.c_str());
+
+        int promptLength = searchPrompt.length();
+
+        // Show best search result (highlighted) AFTER the search prompt
         if (!matchedFiles.empty() && !searchQuery.empty()) {
             std::string bestResult = matchedFiles[selectedResultIndex];
 
-            // Truncate if too long to fit before "Find: "
-            int maxResultWidth = COLS - 50; // Leave room for Find: prompt and controls
-            if ((int)bestResult.length() > maxResultWidth) {
+            // Calculate available space for result (leave room for results count on far right)
+            int resultsCountWidth = 20; // Approximate width for results count
+            int maxResultWidth = COLS - promptLength - resultsCountWidth - 5; // Extra padding
+
+            if (maxResultWidth > 10 && (int)bestResult.length() > maxResultWidth) {
                 bestResult = bestResult.substr(0, maxResultWidth - 3) + "...";
             }
 
-            // Display with highlight
+            // Display result with highlight to the right of the search prompt
+            int resultX = promptLength + 3; // Add some spacing
             attron(A_REVERSE);
-            mvprintw(footerY, 0, " %s ", bestResult.c_str());
+            mvprintw(footerY, resultX, " %s ", bestResult.c_str());
             attroff(A_REVERSE);
 
-            // Move search prompt to after the result
-            int promptX = bestResult.length() + 3;
-            std::string searchPrompt = std::string("  ") + TEXT_SEARCH_PROMPT + searchQuery;
-            mvprintw(footerY, promptX, "%s", searchPrompt.c_str());
-
-            // Show results count on the right side
+            // Show results count on the far right side
             std::string resultsText = "(" + std::to_string(matchedFiles.size()) + TEXT_SEARCH_RESULTS;
             mvprintw(footerY, COLS - resultsText.length(), "%s", resultsText.c_str());
-
-            // Position cursor at end of search query
-            move(footerY, promptX + searchPrompt.length());
         } else {
-            // No results or empty query - just show search prompt
-            std::string searchPrompt = std::string(TEXT_SEARCH_PROMPT) + searchQuery;
-            mvprintw(footerY, 0, "%s", searchPrompt.c_str());
-
             // Show results count on the right side if searching
             if (!searchQuery.empty()) {
                 std::string resultsText = "(0" + std::string(TEXT_SEARCH_RESULTS);
                 mvprintw(footerY, COLS - resultsText.length(), "%s", resultsText.c_str());
             }
-
-            // Position cursor at end of search query
-            move(footerY, searchPrompt.length());
         }
+
+        // Position cursor at end of search query
+        move(footerY, promptLength);
 
         // Clear the rest of the line
         clrtoeol();

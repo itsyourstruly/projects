@@ -46,16 +46,14 @@ void syncToCloud(bool silent) {
 
     if (g_syncType == SYNC_TYPE_FULL) {
         cmd = "rclone sync \"" + BASE_DIR + "\" \"" + g_currentRemote + ":" + RCLONE_PATH +
-              "\" --exclude '.git/**' 2>/dev/null";
+              "\" --exclude '.git/**' --fast-list 2>/dev/null";
     } else {
         cmd = "rclone copy \"" + BASE_DIR + "\" \"" + g_currentRemote + ":" + RCLONE_PATH +
-              "\" --exclude '.git/**' 2>/dev/null";
+              "\" --exclude '.git/**' --fast-list 2>/dev/null";
     }
 
-    if (silent) {
-        cmd += " &";
-    }
-
+    // Always run async to avoid blocking UI (add & to background it)
+    cmd += " &";
     system(cmd.c_str());
 }
 
@@ -63,7 +61,7 @@ void syncFromCloud() {
     if (!g_cloudSyncEnabled || g_currentRemote.empty()) return;
 
     std::string cmd = "rclone copy \"" + g_currentRemote + ":" + RCLONE_PATH + "\" \"" + BASE_DIR +
-                      "\" --exclude '.git/**' 2>/dev/null";
+                      "\" --exclude '.git/**' --fast-list 2>/dev/null";
 
     system(cmd.c_str());
 }

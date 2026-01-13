@@ -10,7 +10,7 @@ Research Paper Title
 
 Paragraph 1 starts on this line. Double space your paragraphs for correct formatting.
 
-Like this! (paragraph 2) Continue to add more paragraphs as needed before the Works Cited section. When ready, press 'c' while hovering over this file to convert it into a duplicate file ending in ".docx".
+LIKE THIS! (paragraph 2) Continue to add more paragraphs as needed before the Works Cited section. When ready, press 'c' while hovering over this file to convert it into a duplicate file ending in ".docx".
 
 Works Cited
 

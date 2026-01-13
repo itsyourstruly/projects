@@ -12,7 +12,7 @@ Nice!
 
 When you make changes, you can press control+s to save it to the file.
 
-Whenever you want to get out of a file and go back to the beautifully decorated home page press control+q. It will also ask if you want to save your changes to the file if you haven't already.
+Whenever you want to get out of a file and go back to the beautifully decorated home page press control+q. It will also prompt to save your changes to the file if you haven't already.
 
 Not sure if you noticed quite yet, but you don't have a mouse. Ohh noo matthew how am I going to do anything?? 
 
@@ -29,9 +29,20 @@ Find is control+f
 Undo is control+z
 Redo is control+y
 
-If you want to see them all (there's so many) you can press control+e (this lets you use comm-ands which you will see on the bottom) and type "help defaultkeys". You can just scroll down and  see the list. Press control+g to quit it.
+If you want to see them all (there's so many) you can press control+e (this lets you use commands within the text editor, which you will see on the bottom) and type "help defaultkeys". You can just scroll down and  see the list. Press control+g to close it.
 
+If you'd like to turn on or off the spell checker, you can press control+e and type "set aspell.check (on/off)". You're able to adjust the quality of the suggestions by using "set aspell.sugmode (ultra, fast, normal, slow)." You can also move your cursor to the underlines word and open the control+e menu and type "acceptsug" to correct the word, you can press tab after to cycle through different suggestions. You can also type "addpersonal" If you want to save that special word.
 
-When you're on your homepage and decide to make a new file, you'll notice it asks if you w-ant a blank or MLA format file. Blank is blank and MLA format is pretty interesting. If youchoose MLA format, it'll make a file ending in ".txt". When you open it it'll look like an interesting format, but just fill it out normally. Put your full name, instructor name, yadayada. It's simple to use, just keep the formatting the same, the spaces between each line are essential so make sure they stay. You can make as many body paragraphs as you want just make sure to put a space between them. When you're done, exit the file and while its high-lighted, press 'c' and it'll make a duplicate of that file that ends in ".docx". You wont be able to open those files on this device.
+Nice! You've mastered this text editor. 
 
-Thats the basics, you should be able to figure out the rest. Good luck
+When you're on your homepage and decide to make a new file, you'll notice it asks if you want an empty,r MLA format, or smart file. empty is empty and MLA format is pretty interesting. If you choose MLA format, it'll make a file ending in ".txt". When you open it it'll look like an interesting format, but just fill it out normally. Put your full name, instructor name, yadayada. It's simple to use, just keep the formatting the same, the spaces between each line are essential so make sure they stay. You can make as many body paragraphs as you want just make sure to put a space between them. When you're done, exit the file and while its high-lighted, press 'c' and it'll make a duplicate of that file that ends in ".docx". You wont be able to open those files on this device. Next, we have the "smart" file. This one is meant to be for quickly jotting down notes, or making lists. The template should be explanatory but if its not i'll explain it for you. The numbers symbolize a section and only one section with each number can exist. If you try and create a "1. " section when it already exists, it will rename the existing section instead. Next, you can create bullets using characters. 
+For Example:
+1. First section
+1a. First sections first bullet
+1b. first sections second bullet
+
+The bullets are sorted by alphabetical order. You can exit and come back to the document at any moment and continue to update it by using the same format. You may also write plain text anywhere in the document and it will be transported to the top of the document when you return.
+
+That's the basics, you should be able to figure out the rest. Good luck
+
+That's so funny to be honest.

@@ -1,7 +1,7 @@
 #include "text.h"
 
 // UI Text
-const char* TEXT_HEADER = "Happy Writing!";
+const char* TEXT_HEADER = "Happy Writing!!";
 const char* TEXT_SEPARATOR = "--------------------------------------";
 const char* TEXT_HOME_FOLDER = "Presenting the home";
 const char* TEXT_YOU_ARE_IN = "Presenting %s";
@@ -48,7 +48,7 @@ const char* TEXT_SETTINGS_OPT_TOGGLE_CLOUD = "4. Toggle Cloud Sync (Enable/Disab
 const char* TEXT_SETTINGS_OPT_TOGGLE_AUTO = "5. Toggle Auto Sync Mode";
 const char* TEXT_SETTINGS_OPT_SYNC_NOW = "6. Sync Now (Manual)";
 const char* TEXT_SETTINGS_OPT_SETUP = "7. Setup New Remote";
-const char* TEXT_SETTINGS_OPT_BACK = "8. Back to Files";
+const char* TEXT_SETTINGS_OPT_BACK = "8. Withdraw to Files";
 const char* TEXT_SETTINGS_SELECT_REMOTE = "Select Remote";
 const char* TEXT_SETTINGS_ENTER_SELECT = "ENTER to select, ESC to cancel";
 const char* TEXT_SETTINGS_NO_REMOTES = "No remotes configured. Setup a new remote first.";
@@ -70,7 +70,7 @@ const char* TEXT_SETTINGS_STATUS_LOCAL = "Local path: ";
 const char* TEXT_SETTINGS_CONFIG_FILE = "jot_config.txt";
 const char* TEXT_SETTINGS_TESTING_CONNECTION = "Testing connection...";
 const char* TEXT_SETTINGS_CONNECTION_OK = "✓ Connection successful!";
-const char* TEXT_SETTINGS_CONNECTION_FAILED = "✗ Connection failed - Remote needs reconfiguration";
+const char* TEXT_SETTINGS_CONNECTION_FAILED = " Connection failed - Remote needs reconfiguration";
 const char* TEXT_SETTINGS_CONNECTION_HELP = "Run 'rclone config' to fix authentication issues";
 const char* TEXT_SETTINGS_FIX_REMOTE = "9. Fix/Reconnect Remote";
 const char* TEXT_SETTINGS_OPT_TEST_CONNECTION = "10. Test Connection";
@@ -86,7 +86,7 @@ const char* TEXT_SETTINGS_SYNC_TYPE = "Sync Type: ";
 const char* TEXT_CONNECTION_TEST_HEADER = "Connection Test";
 const char* TEXT_CONNECTION_TEST_TESTING = "Testing connection to: ";
 const char* TEXT_CONNECTION_TEST_SUCCESS = "✓ SUCCESS! Connection is working perfectly.";
-const char* TEXT_CONNECTION_TEST_FAILED = "✗ FAILED! Cannot connect to remote.";
+const char* TEXT_CONNECTION_TEST_FAILED = " FAILED! Cannot connect to remote.";
 const char* TEXT_CONNECTION_TEST_NO_REMOTE = "No remote selected. Please select a remote first (Option 3).";
 const char* TEXT_CONNECTION_TEST_SYNC_DISABLED = "Cloud sync is disabled. Enable it first (Option 4).";
 const char* TEXT_CONNECTION_FIX_PROMPT = "Would you like to fix this connection? (y/n): ";
@@ -103,7 +103,7 @@ const char* TEXT_FIX_WIZARD_RECONNECT_INFO = "   This will refresh your authenti
 const char* TEXT_FIX_WIZARD_RECONFIG_INFO = "   This will guide you through a complete setup.";
 const char* TEXT_FIX_WIZARD_RUNNING = "Running authentication...";
 const char* TEXT_FIX_WIZARD_SUCCESS = "✓ Connection fixed successfully!";
-const char* TEXT_FIX_WIZARD_FAILED = "✗ Fix failed. You may need to delete and recreate the remote.";
+const char* TEXT_FIX_WIZARD_FAILED = "Fix failed. You may need to delete and recreate the remote.";
 const char* TEXT_FIX_WIZARD_INSTRUCTIONS = "Follow the prompts in the terminal to complete authentication.";
 const char* TEXT_FIX_WIZARD_BROWSER = "Your browser will open for authentication.";
 const char* TEXT_FIX_WIZARD_TESTING = "Testing connection again...";
@@ -141,19 +141,19 @@ const char* TEXT_MSG_RENAMED = "Retitled to ";
 const char* TEXT_MSG_RENAME_CANCELLED = "Kept title";
 const char* TEXT_MSG_NO_FILES_RENAME = "No notes to retitle.";
 const char* TEXT_MSG_DELETED = "Scrapped ";
-const char* TEXT_MSG_DELETE_CANCELLED = "Kept file";
+const char* TEXT_MSG_DELETE_CANCELLED = "Kept record";
 const char* TEXT_MSG_NO_FILES_DELETE = "No files to scrap.";
 const char* TEXT_MSG_LOCKED = "Locked ";
 const char* TEXT_MSG_UNLOCKED = "Unlocked ";
-const char* TEXT_MSG_CANNOT_DELETE_LOCKED = "Cannot delete locked file";
-const char* TEXT_MSG_CANNOT_RENAME_LOCKED = "Cannot rename locked file";
-const char* TEXT_MSG_CANNOT_MOVE_LOCKED = "Cannot move locked files";
+const char* TEXT_MSG_CANNOT_DELETE_LOCKED = "Cannot scrap locked file";
+const char* TEXT_MSG_CANNOT_RENAME_LOCKED = "Cannot retitle locked file";
+const char* TEXT_MSG_CANNOT_MOVE_LOCKED = "Cannot relocate locked files";
 
 // Selection messages
 const char* TEXT_MSG_ITEMS_SELECTED = " item(s) chosen ('esc' to deselect, 'v' to relocate)";
-const char* TEXT_MSG_SELECTION_MODE_ON = "Selection mode ON (press 's' again to lock, use arrows to select)";
+const char* TEXT_MSG_SELECTION_MODE_ON = "Selection mode ON (press 's' again to lock in selection, or esc to withdraw)";
 const char* TEXT_MSG_SELECTION_LOCKED = "Selection locked (";
-const char* TEXT_MSG_SELECTION_CANCELLED = "Selection cancelled";
+const char* TEXT_MSG_SELECTION_CANCELLED = "Selection withdrew";
 const char* TEXT_MSG_NO_ITEMS_TO_MOVE = "No assets chosen to move";
 
 // Move operation messages
